@@ -30,16 +30,16 @@ class _PrivateLibraryScreenState extends State<PrivateLibraryScreen> {
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false);
-          
+
       setState(() {
         _stories = data;
         _isLoading = false;
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل المكتبة: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('خطأ في تحميل المكتبة: $e')));
         setState(() => _isLoading = false);
       }
     }
@@ -55,30 +55,42 @@ class _PrivateLibraryScreenState extends State<PrivateLibraryScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _stories.isEmpty
-              ? const Center(child: Text('لم تصنع أي قصص بعد. ابدأ المغامرة!'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _stories.length,
-                  itemBuilder: (context, index) {
-                    final story = _stories[index];
-                    return Card(
-                      color: AppColors.primary.withOpacity(0.2),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: ListTile(
-                        leading: Icon(Icons.menu_book, color: AppColors.secondary),
-                        title: Text(story['title'] ?? 'قصة بدون عنوان', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(story['created_at'].toString().split('T')[0]),
-                        trailing: Icon(Icons.play_circle_fill, color: AppColors.primary),
-                        onTap: () {
-                           // Open in CinemaScreen (passing story data to be played)
-                           ScaffoldMessenger.of(context).showSnackBar(
-                             const SnackBar(content: Text('سيتم تشغيل القصة في شاشة السينما قريباً'))
-                           );
-                        },
-                      ),
-                    );
-                  },
-                ),
+          ? const Center(child: Text('لم تصنع أي قصص بعد. ابدأ المغامرة!'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _stories.length,
+              itemBuilder: (context, index) {
+                final story = _stories[index];
+                return Card(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: ListTile(
+                    leading: Icon(Icons.menu_book, color: AppColors.secondary),
+                    title: Text(
+                      story['title'] ?? 'قصة بدون عنوان',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      story['created_at'].toString().split('T')[0],
+                    ),
+                    trailing: Icon(
+                      Icons.play_circle_fill,
+                      color: AppColors.primary,
+                    ),
+                    onTap: () {
+                      // Open in CinemaScreen (passing story data to be played)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'سيتم تشغيل القصة في شاشة السينما قريباً',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
     );
   }
 }
