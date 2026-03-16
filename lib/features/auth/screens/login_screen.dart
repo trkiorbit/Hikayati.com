@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hikayati/core/auth/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,54 +10,59 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController(text: 'saam12324@gmail.com');
-  final _passwordController = TextEditingController(text: 'Z232345qaz@');
-  final _authService = AuthService();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _isLogin = true; // للتبديل بين تسجيل الدخول وإنشاء الحساب
 
-  void _submit() async {
+  Future<void> _signInOrSignUp() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الرجاء إدخال البريد الإلكتروني وكلمة المرور')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
+
     try {
-      if (_isLogin) {
-        await _authService.signInEmail(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
+      // محاولة تسجيل الدخول
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      if (mounted) context.go('/'); // الانتقال للرئيسية بعد النجاح
+    } on AuthException catch (e) {
+      // إذا الحساب غير موجود، ننشئ حساب جديد تلقائياً
+      if (e.message.contains('Invalid login credentials')) {
+        try {
+          await Supabase.instance.client.auth.signUp(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم إنشاء الحساب بنجاح!')),
+            );
+            context.go('/'); // الانتقال للرئيسية
+          }
+        } catch (signUpError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('خطأ في التسجيل: $signUpError')),
+            );
+          }
+        }
       } else {
-        await _authService.signUpEmail(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم إنشاء الحساب بنجاح!')),
+            SnackBar(content: Text('خطأ: ${e.message}')),
           );
         }
       }
-      if (mounted) context.go('/');
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _loginWithGoogle() async {
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signInWithGoogle();
-      if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error Setup Required for Google Sign-in: $e'),
-          ),
+          SnackBar(content: Text('حدث خطأ غير متوقع: $e')),
         );
       }
     } finally {
@@ -68,59 +73,86 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'كلمة المرور'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : Column(
-                    children: [
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        onPressed: _submit,
-                        child: Text(_isLogin ? 'دخول' : 'تسجيل حساب'),
-                      ),
-                      TextButton(
-                        onPressed: () => setState(() => _isLogin = !_isLogin),
-                        child: Text(
-                          _isLogin
-                              ? 'ليس لديك حساب؟ سجل الآن'
-                              : 'لديك حساب بالفعل؟ سجل دخولك',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.login),
-                        label: const Text('تسجيل الدخول المستمر عبر جوجل'),
-                        onPressed: _loginWithGoogle,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                        ),
-                      ),
-                    ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF6A0DAD), Color(0xFF1A1A2E)], // ألوان حكواتي
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.auto_awesome, size: 80, color: Color(0xFFFFD700)),
+                const SizedBox(height: 20),
+                const Text(
+                  'حكواتي',
+                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'اجعل طفلك بطل القصة',
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                ),
+                const SizedBox(height: 40),
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'البريد الإلكتروني',
+                    hintStyle: const TextStyle(color: Colors.white54),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.email, color: Colors.white70),
                   ),
-          ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: 'كلمة المرور',
+                    hintStyle: const TextStyle(color: Colors.white54),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _signInOrSignUp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD700), // لون ذهبي
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.black)
+                        : const Text('دخول / تسجيل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -1,4 +1,68 @@
-﻿name: hikayati
+﻿=== هيكل المجلدات (lib) ===
+Folder PATH listing
+Volume serial number is 3C4E-9649
+D:\HIKAYATI.COM\LIB
+?   main.dart
+?   
+????core
+?   ????auth
+?   ?       auth_service.dart
+?   ?       
+?   ????constants
+?   ????network
+?   ?       supabase_service.dart
+?   ?       
+?   ????router
+?   ?       app_router.dart
+?   ?       
+?   ????theme
+?   ?       app_colors.dart
+?   ?       app_theme.dart
+?   ?       
+?   ????utils
+?           app_router.dart
+?           
+????data
+?   ????datasources
+?   ????models
+?   ????repositories
+????domain
+?   ????entities
+?   ????repositories
+?   ????usecases
+????features
+    ????auth
+    ?   ????screens
+    ?           login_screen.dart
+    ?           
+    ????home
+    ?   ????screens
+    ?           home_screen.dart
+    ?           
+    ????legal
+    ?   ????screens
+    ?           privacy_policy_screen.dart
+    ?           terms_of_service_screen.dart
+    ?           
+    ????library
+    ?   ????screens
+    ?           private_library_screen.dart
+    ?           public_library_screen.dart
+    ?           
+    ????story_engine
+        ????screens
+        ?       cinema_screen.dart
+        ?       story_creation_screen.dart
+        ?       
+        ????services
+                hakim_ai_service.dart
+                image_generation_service.dart
+                story_generation_service.dart
+                voice_generation_service.dart
+                
+
+=== ملف pubspec.yaml ===
+name: hikayati
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -46,7 +110,6 @@ dependencies:
   google_generative_ai: ^0.4.3
   flutter_dotenv: ^5.1.0
   audioplayers: ^6.1.0
-  video_player: ^2.11.1
 
 
 dev_dependencies:
@@ -77,8 +140,6 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - .env
-    - assets/videos/
-    - assets/audio/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -106,3 +167,48 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
+=== ملف main.dart ===
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/theme/app_theme.dart';
+import 'core/router/app_router.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
+  runApp(const ProviderScope(child: HikayatiApp()));
+}
+
+class HikayatiApp extends StatelessWidget {
+  const HikayatiApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: 'Hikayati - ط­ظƒظˆط§طھظٹ',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme,
+
+      // RTL Setup for Arabic
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ar', 'SA'), // Arabic (Saudi Arabia) as default
+        Locale('en', 'US'), // English as fallback
+      ],
+      locale: const Locale('ar', 'SA'), // Force Arabic / RTL by default
+
+      routerConfig: AppRouter.router,
+    );
+  }
+}
