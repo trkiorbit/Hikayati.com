@@ -4,24 +4,21 @@ import 'package:hikayati/core/network/supabase_service.dart';
 
 class AuthService {
   final SupabaseClient _client = SupabaseService.client;
-  
+
   // To use Google Sign in you will need to provide the Web Client ID from GCP
   // We will leave this null/empty until you configure it.
-  final String? webClientId = null; 
+  final String? webClientId = null;
   final String? iosClientId = null;
 
-  Future<AuthResponse> signInWithEmail(String email, String password) async {
+  Future<AuthResponse> signInEmail(String email, String password) async {
     return await _client.auth.signInWithPassword(
       email: email,
       password: password,
     );
   }
 
-  Future<AuthResponse> signUpWithEmail(String email, String password) async {
-    return await _client.auth.signUp(
-      email: email,
-      password: password,
-    );
+  Future<AuthResponse> signUpEmail(String email, String password) async {
+    return await _client.auth.signUp(email: email, password: password);
   }
 
   Future<AuthResponse?> signInWithGoogle() async {
@@ -29,14 +26,16 @@ class AuthService {
     // specifically for your Supabase project. For now, it will throw an error
     // if webClientId is null.
     if (webClientId == null) {
-      throw Exception('Google Sign-In is not configured yet. Please add your webClientId.');
+      throw Exception(
+        'Google Sign-In is not configured yet. Please add your webClientId.',
+      );
     }
-    
+
     final GoogleSignIn googleSignIn = GoogleSignIn(
       serverClientId: webClientId,
       clientId: iosClientId,
     );
-    
+
     final googleUser = await googleSignIn.signIn();
     final googleAuth = await googleUser!.authentication;
     final accessToken = googleAuth.accessToken;
