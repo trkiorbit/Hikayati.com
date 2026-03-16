@@ -1,0 +1,155 @@
+
+
+# HIKAYATI ADVANCED MASTER BLUEPRINT
+
+## PRODUCT VISION & BRAND IDENTITY
+**Core Mission**: Transform children into story heroes through AI-powered personalized storytelling with cinematic experience and real-world products.
+
+**Brand Personality**: Magical, Family-friendly, Cinematic, Trustworthy, Innovative
+
+**Visual Identity System**:
+- **Primary Colors**: Hikayati Purple (#6A0DAD), Warm Gold (#FFD700), Deep Black (#000000)
+- **Secondary Colors**: Star White (#FFFFFF), Success Green (#4CAF50), Alert Red (#F44336)
+- **Typography**: Arabic-friendly fonts with cinematic feel
+- **Iconography**: Custom magical icons (Private Library lock, Hero crown robot)
+
+## TECHNICAL ARCHITECTURE
+
+### Supabase Configuration
+```env
+SUPABASE_URL=https://wmariciwpxwppqsckrvm.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_HLpSb3q4rzwuOhwaTQ4tXQ_c7CPqYjJ
+```
+
+### API Service Keys
+- **Gemini AI**: `AIza...` (Hakim AI Assistant)
+- **Pollinations Text**: `sk_...` (Story generation)
+- **Pollinations Image**: `sk_...` (Character/scene images)  
+- **Pollinations Audio**: `sk_...` (Narrator voices - male/female, v3 model)
+- **ElevenLabs**: `305a537d0f36bf5c4ca695173fe27e55d8568b18030c0804a962410d6d8dce36` (Voice cloning)
+
+### Credit System
+- **Default Cost**: 10 credits per story creation
+- **Configurable**: Adjustable via Supabase admin panel
+- **Operations**: Story creation, public story access, premium features
+
+## SYSTEM LAYERS (ENHANCED)
+
+### 1. Application Layer (Flutter - Production Ready)
+**Navigation Structure**:
+- Home Screen (Public Library + Create Button)
+- Story Creation Wizard (Multi-step form)
+- Cinema Experience (Full-screen immersive)
+- Private Library (Golden lock secured)
+- Store Integration (Real products)
+- Account Management
+
+**RTL Support**: Full Arabic right-to-left interface with cultural considerations
+
+### 2. Story Engine Layer (Advanced Logic)
+**Intelligent Generation Flow**:
+1. Check for existing similar stories (cost optimization)
+2. Validate user credits before AI calls
+3. Route to appropriate AI service based on customization level
+4. Handle avatar analysis for character consistency
+5. Build structured story JSON with scenes
+
+**Character Consistency Protocol**:
+- Fixed visual descriptors per story
+- Avatar reference embedding when available
+- Scene-by-scene trait reinforcement
+
+### 3. AI Services Layer (Pollinations Optimized)
+**Text Generation Service**:
+- Input: Child name, age, story style, language
+- Output: Title, scenes array, visual descriptions
+- Model: Pollinations advanced text generation
+
+**Image Generation Service**:
+- Input: Per-scene visual prompts with consistent character traits
+- Style options: Cartoon, Anime, Realistic, Avatar-based
+- Output: High-quality image URLs with watermark protection
+
+**Audio Generation Service**:
+- **Standard Narration**: Pollinations v3 model with male/female voice selection
+- **Voice Cloning**: ElevenLabs integration for parent voice replication
+- **Safety**: Voice cloning restricted to adult accounts only
+
+**Hakim AI Assistant** (Gemini):
+- Multi-role intelligence: Story suggestions, user support, store recommendations
+- Context-aware responses based on user journey stage
+
+### 4. Backend Layer (Supabase - Enhanced)
+
+**Core Tables Schema**:
+```sql
+-- profiles table
+user_id UUID (Primary Key)
+name TEXT
+credits INTEGER DEFAULT 100
+language VARCHAR(10) DEFAULT 'ar'
+avatar_data JSONB
+voice_clone_enabled BOOLEAN DEFAULT false
+created_at TIMESTAMP
+
+-- stories table  
+id UUID (Primary Key)
+user_id UUID (Foreign Key)
+title TEXT
+language VARCHAR(10)
+scenes_json JSONB
+cover_image TEXT
+is_public BOOLEAN DEFAULT false
+created_at TIMESTAMP
+
+-- public_stories table
+id UUID (Primary Key)
+title TEXT
+summary TEXT
+cover TEXT
+price_credits INTEGER DEFAULT 10
+category VARCHAR(50)
+created_at TIMESTAMP
+
+-- purchases table
+user_id UUID
+story_id UUID
+unlock_type VARCHAR(20) -- 'creation', 'access', 'premium'
+credits_paid INTEGER
+created_at TIMESTAMP
+```
+
+**Critical Functions**:
+- `deduct_credits(user_id, amount, reason)` - Secure credit management
+- Row Level Security (RLS) on all tables
+- Storage buckets for images/audio with proper access controls
+
+## PRIVACY & COMPLIANCE FRAMEWORK
+
+### Child Safety Protocols
+**Data Collection Restrictions**:
+- No permanent storage of children's photos
+- No voice cloning for minors
+- Parental consent required for voice cloning
+- All personal data encrypted at rest and in transit
+
+**Privacy Policy Requirements**:
+- Clear explanation of AI usage
+- Data retention policies (auto-delete unused content)
+- Third-party service disclosures (Pollinations, ElevenLabs, Gemini)
+- User rights (data deletion, export, modification)
+
+### App Store Compliance
+**Required Policies**:
+- Privacy Policy URL in app store listing
+- Terms of Service document
+- Age rating compliance (4+ with parental guidance)
+- In-app purchase disclosures
+- Subscription terms (if applicable)
+
+## CINEMA EXPERIENCE SPECIFICATIONS
+
+### Immersive Viewing Flow
+1. **Transition**: Black screen fade-in
+2. **Branding**: Hikayati logo animation with signature sound
+3. **Introduction**: "كان يا ما كان... في قديم الز
