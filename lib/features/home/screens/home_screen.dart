@@ -14,10 +14,10 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-               await AuthService().signOut();
-               if(context.mounted) context.go('/login');
+              await AuthService().signOut();
+              if (context.mounted) context.go('/login');
             },
-          )
+          ),
         ],
       ),
       drawer: Drawer(
@@ -28,7 +28,11 @@ class HomeScreen extends StatelessWidget {
               decoration: BoxDecoration(color: Color(0xFF6A0DAD)),
               child: Text(
                 'حكايتي',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             ListTile(
@@ -39,11 +43,11 @@ class HomeScreen extends StatelessWidget {
                 context.push('/private_library');
               },
             ),
-             ListTile(
+            ListTile(
               leading: const Icon(Icons.store),
               title: const Text('متجر حكواتي (رصيد)'),
               onTap: () {
-                 Navigator.pop(context);
+                Navigator.pop(context);
                 // Future Store Implementation conforming to Apple/Google guidelines
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('سيتم توجيهك للمتجر قريباً...')),
@@ -82,11 +86,15 @@ class HomeScreen extends StatelessWidget {
             ElevatedButton.icon(
               icon: const Icon(Icons.menu_book),
               onPressed: () {
-                 context.push('/public_library');
+                context.push('/public_library');
               },
               label: const Text('المكتبة العامة'),
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -96,7 +104,11 @@ class HomeScreen extends StatelessWidget {
               },
               label: const Text('اصنع قصة جديدة'),
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+              ),
             ),
           ],
         ),
@@ -104,13 +116,13 @@ class HomeScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Open Hakim AI Dialog
-           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('حكيم في وضع الاستراحة حالياً!')),
-           );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('حكيم في وضع الاستراحة حالياً!')),
+          );
         },
         backgroundColor: const Color(0xFFFFD700), // Gold
-        child: const Icon(Icons.auto_awesome, color: Colors.black),
         tooltip: 'اسأل حكيم',
+        child: const Icon(Icons.auto_awesome, color: Colors.black),
       ),
     );
   }

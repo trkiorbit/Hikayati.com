@@ -16,7 +16,8 @@ class StoryGenerationService {
     await SupabaseService.deductCredits(10, 'Story Creation: $theme');
 
     // 2. Build the structured Prompt to ensure JSON output and Character Consistency
-    final systemPrompt = '''
+    final systemPrompt =
+        '''
     أنت مؤلف قصص أطفال محترف ومبدع.
     الهدف: كتابة قصة تناسب طفل اسمه "$childName" وعمره $age سنوات بموضوع "$theme".
     
@@ -33,14 +34,14 @@ class StoryGenerationService {
 
     // 3. Call Pollinations Text API
     final response = await http.post(
-      Uri.parse('$_baseUrl'),
+      Uri.parse(_baseUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         "messages": [
           {"role": "system", "content": systemPrompt},
-          {"role": "user", "content": "اكتب القصة الآن."}
+          {"role": "user", "content": "اكتب القصة الآن."},
         ],
-        "jsonMode": true, 
+        "jsonMode": true,
       }),
     );
 

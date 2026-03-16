@@ -10,24 +10,37 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(text: 'saam12324@gmail.com');
+  final _passwordController = TextEditingController(text: 'Z232345qaz@');
   final _authService = AuthService();
   bool _isLoading = false;
+  bool _isLogin = true; // للتبديل بين تسجيل الدخول وإنشاء الحساب
 
-  void _login() async {
+  void _submit() async {
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithEmail(
-        _emailController.text,
-        _passwordController.text,
-      );
+      if (_isLogin) {
+        await _authService.signInEmail(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
+      } else {
+        await _authService.signUpEmail(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم إنشاء الحساب بنجاح!')),
+          );
+        }
+      }
       if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -42,7 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error Setup Required for Google Sign-in: $e')),
+          SnackBar(
+            content: Text('Error Setup Required for Google Sign-in: $e'),
+          ),
         );
       }
     } finally {
@@ -53,7 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تسجيل الدخول')),
+      appBar: AppBar(
+        title: Text(_isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -76,9 +93,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 : Column(
                     children: [
                       ElevatedButton(
-                        onPressed: _login,
-                        child: const Text('دخول'),
-                        style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        onPressed: _submit,
+                        child: Text(_isLogin ? 'دخول' : 'تسجيل حساب'),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => _isLogin = !_isLogin),
+                        child: Text(
+                          _isLogin
+                              ? 'ليس لديك حساب؟ سجل الآن'
+                              : 'لديك حساب بالفعل؟ سجل دخولك',
+                        ),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(

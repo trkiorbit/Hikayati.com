@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hikayati/core/network/supabase_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   group('Credit Deduction Tests', () {
@@ -8,7 +7,13 @@ void main() {
       // Assuming Supabase is not initialized with an active session in test mode
       expect(
         () async => await SupabaseService.deductCredits(10, 'Test Deduction'),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'message', contains('يجب تسجيل الدخول لإتمام العملية'))),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('يجب تسجيل الدخول لإتمام العملية'),
+          ),
+        ),
       );
     });
 
