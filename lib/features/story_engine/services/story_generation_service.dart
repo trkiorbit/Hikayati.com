@@ -10,7 +10,6 @@ class StoryGenerationService {
     required String childName,
     required int age,
     required String theme,
-    required String avatarDescription,
   }) async {
     // 1. Deduct Credits before generation
     await SupabaseService.deductCredits(10, 'Story Creation: $theme');
@@ -27,7 +26,7 @@ class StoryGenerationService {
     2. "scenes": مصفوفة (Array) تحتوي على 4 مشاهد على الأقل.
        كل مشهد يحتوي على:
        - "text": نص الرواية باللغة العربية.
-       - "image_prompt": وصف بصري دقيق باللغة الإنجليزية لتوليد صورة المشهد. يجب أن يتضمن هذا الوصف دائماً صفات بطل القصة لضمان الاتساق (Character Consistency): $avatarDescription.
+       - "image_prompt": وصف بصري دقيق باللغة الإنجليزية لتوليد صورة المشهد. يجب أن يكون الوصف معبّراً ويعكس خيال القصة بدقة لضمان الاتساق (Character Consistency).
     
     يجب أن يكون الرد JSON فقط، بدون أي نص إضافي أو شروحات.
     ''';

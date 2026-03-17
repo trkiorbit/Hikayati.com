@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,6 +8,8 @@ import '../../features/story_engine/screens/story_creation_screen.dart';
 import '../../features/story_engine/screens/cinema_screen.dart';
 import '../../features/library/screens/public_library_screen.dart';
 import '../../features/library/screens/private_library_screen.dart';
+import '../../features/story_engine/screens/intro_cinematic_screen.dart';
+import '../../features/story_engine/screens/generation_loading_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -19,18 +21,12 @@ class AppRouter {
 
       if (!isAuth && !isGoingToLogin) return '/login';
       if (isAuth && isGoingToLogin) return '/';
-      
+
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/create-story',
         builder: (context, state) => const StoryCreationScreen(),
@@ -38,8 +34,30 @@ class AppRouter {
       GoRoute(
         path: '/cinema',
         builder: (context, state) {
-          final storyData = state.extra as Map<String, dynamic>? ?? {};
-          return CinemaScreen(storyData: storyData);
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final storyData = extra['storyData'] ?? {};
+          final voice = extra['voice'] ?? '';
+          return CinemaScreen(storyData: storyData, voice: voice);
+        },
+      ),
+      GoRoute(
+        path: '/generation-loading',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final requestData = extra['requestData'] ?? {};
+          final voice = extra['voice'] ?? '';
+          return GenerationLoadingScreen(
+              requestData: requestData, voice: voice);
+        },
+      ),
+      GoRoute(
+        path: '/intro-cinematic',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          // requestData: بيانات الطلب، التوليد يحدث داخل IntroCinematicScreen
+          final requestData = extra['requestData'] as Map<String, dynamic>? ?? {};
+          final voice = extra['voice'] ?? '';
+          return IntroCinematicScreen(requestData: requestData, voice: voice);
         },
       ),
       GoRoute(

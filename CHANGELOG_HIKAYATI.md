@@ -31,3 +31,11 @@
 * **التفاصيل:** إضافة حزمة `video_player` و `audioplayers`. تشغيل فيديو الشعار الذهبي مع الصوت السينمائي بشكل متزامن قبل بدء القصة.
 * **الملفات المعدلة:** `pubspec.yaml`, `lib/features/story_engine/screens/intro_screen.dart`
 * **النتيجة:** انتقال سلس من الرئيسية إلى المقدمة، ومن ثم تلقائياً إلى شاشة السينما بعد انتهاء العرض.
+
+### 6. بناء وربط المحرك الموحد (Unified Engine)
+* **التفاصيل:**
+    * إنشاء كلاس `UnifiedEngine` المسؤول عن توليد القصة بالكامل (نص وصور).
+    * استخدام `http` و `jsonMode` في `Pollinations API` لضمان استلام `JSON` نظيف.
+    * تعديل شاشة `StoryCreationScreen` لتجميع بيانات البطل، استدعاء المحرك، ثم تمرير القصة الجاهزة إلى شاشة السينما.
+* **الملفات المعدلة:** `lib/features/story_engine/services/unified_engine.dart` (جديد), `lib/features/story_engine/screens/story_creation_screen.dart`
+* **النتيجة:** فصل منطق توليد القصة عن الواجهة، وتحسين معالجة الأخطاء، وتجهيز البيانات بشكل مثالي للمرحلة التالية (شاشة السينما).

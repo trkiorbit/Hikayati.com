@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/theme/app_colors.dart';
 
 class StoryCreationScreen extends StatefulWidget {
   const StoryCreationScreen({super.key});
@@ -13,7 +14,6 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _themeController = TextEditingController();
-  final _avatarController = TextEditingController();
 
   String _selectedStyle = '3d-model';
   String _selectedVoice = 'alloy';
@@ -22,8 +22,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   void _generateStory() async {
     if (_nameController.text.isEmpty ||
         _ageController.text.isEmpty ||
-        _themeController.text.isEmpty ||
-        _avatarController.text.isEmpty) {
+        _themeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى تعبئة جميع الحقول لبدء السحر!')),
       );
@@ -33,26 +32,27 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Navigate to cinema screen first to show the loading animation
-      context.push(
-        '/cinema',
-        extra: {
-          'childName': _nameController.text,
-          'age': int.parse(_ageController.text),
-          'theme': _themeController.text,
-          'avatarDescription': _avatarController.text,
-          'style': _selectedStyle,
-          'voice': _selectedVoice,
-        },
-      );
+      // 1. تجميع بيانات الطلب للمحرك
+      final requestData = {
+        'heroName': _nameController.text,
+        'heroAge': _ageController.text,
+        'storyStyle': _themeController.text,
+        'imageStyle': _selectedStyle,
+      };
+
+      // الانتقال مباشرة إلى شاشة المقدمة (التوليد يحدث بداخلها في الخلفية)
+      if (mounted) {
+        context.push(
+          '/intro-cinematic',
+          extra: {'requestData': requestData, 'voice': _selectedVoice},
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ غير متوقع: ${e.toString()}')),
+        );
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -88,16 +88,6 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                 labelText: 'موضوع القصة (مثال: الشجاعة، الفضاء، الحيوانات)',
                 border: OutlineInputBorder(),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _avatarController,
-              decoration: const InputDecoration(
-                labelText: 'وصف شكل البطل (لضمان تطابق الصور)',
-                hintText: 'مثال: فتى بشعر أسود قصير، يرتدي نظارات وقميص أحمر',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
             ),
             const SizedBox(height: 24),
             DropdownButtonFormField<String>(
@@ -149,22 +139,16 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
               },
             ),
             const SizedBox(height: 32),
-            _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.secondary,
-                    ),
-                  )
-                : ElevatedButton.icon(
-                    onPressed: _generateStory,
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('اصنع السحر! (يخصم 10 جواهر)'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.secondary,
-                    ),
-                  ),
+            ElevatedButton.icon(
+              onPressed: _generateStory,
+              icon: const Icon(Icons.auto_awesome),
+              label: const Text('اصنع السحر! (يخصم 10 جواهر)'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.secondary,
+              ),
+            ),
           ],
         ),
       ),
