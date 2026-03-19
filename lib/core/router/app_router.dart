@@ -11,7 +11,8 @@ import '../../features/library/screens/private_library_screen.dart';
 import '../../features/story_engine/screens/intro_cinematic_screen.dart';
 import '../../features/story_engine/screens/generation_loading_screen.dart';
 import '../../features/home/screens/app_intro_screen.dart';
-import '../../features/hakeem/screens/hakeem_screen.dart';
+import '../../features/hakeem/screens/hakeem_chat_screen.dart';
+import '../../features/hakeem/screens/create_avatar_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -33,7 +34,8 @@ class AppRouter {
       GoRoute(path: '/app-intro', builder: (context, state) => const AppIntroScreen()),
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/hakeem', builder: (context, state) => const HakeemScreen()),
+      GoRoute(path: '/hakeem', builder: (context, state) => const HakeemChatScreen()),
+      GoRoute(path: '/create-avatar', builder: (context, state) => const CreateAvatarScreen()),
       GoRoute(
         path: '/create-story',
         builder: (context, state) => const StoryCreationScreen(),

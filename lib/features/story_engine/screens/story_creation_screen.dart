@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
 
 class StoryCreationScreen extends StatefulWidget {
@@ -11,35 +12,43 @@ class StoryCreationScreen extends StatefulWidget {
 }
 
 class _StoryCreationScreenState extends State<StoryCreationScreen> {
+  final _nameController = TextEditingController();
+  final _ageController = TextEditingController();
   final _themeController = TextEditingController();
 
-  Map<String, dynamic>? _selectedHero; // يمثل البطل المختار
-
+  Map<String, dynamic>? _savedAvatar;
+  bool _useAvatar = false;
   String _selectedStyle = '3d-model';
   String _selectedVoice = 'alloy';
   bool _isLoading = false;
 
-  void _generateStory() async {
-    // التأكد من اختيار بطل أولاً
-    if (_selectedHero == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار بطلك أولاً أو طلب حكيم لصنع بطل جديد.')),
-      );
-      return;
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedAvatar();
+  }
 
-    final heroName = _selectedHero!['name'] ?? 'بطل حكواتي';
-    final heroAge = _selectedHero!['age'] ?? '7';
+  Future<void> _loadSavedAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    final avatarJson = prefs.getString('saved_avatar');
+    if (avatarJson != null) {
+      if (mounted) setState(() => _savedAvatar = jsonDecode(avatarJson));
+    }
+  }
+
+  void _generateStory() async {
+    final heroName = _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'البطل';
+    final heroAge = _ageController.text.trim().isNotEmpty ? _ageController.text.trim() : '7';
     final storyTheme = _themeController.text.trim().isNotEmpty ? _themeController.text.trim() : 'مغامرة خيالية ومشوقة';
 
     setState(() => _isLoading = true);
 
     try {
-      // 1. تجميع بيانات الطلب للمحرك مع الوصف البصري المستخرج من حكيم
       final requestData = {
-        'heroName': heroName,
-        'heroAge': heroAge,
-        'heroVisualDescription': _selectedHero!['promptSnippet'] ?? '', // البصمة البصرية الثابتة
+        'heroName': _useAvatar ? (_savedAvatar!['name'] ?? heroName) : heroName,
+        'heroAge': _useAvatar ? (_savedAvatar!['age'] ?? heroAge) : heroAge,
+        'heroVisualDescription': _useAvatar ? (_savedAvatar!['promptSnippet'] ?? '') : '',
+        'useAvatar': _useAvatar,
         'storyStyle': storyTheme,
         'imageStyle': _selectedStyle,
       };
@@ -69,48 +78,58 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // قسم اختيار البطل (تمهيد لحكيم والأفاتار)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    _selectedHero == null ? 'لم تختر بطلك بعد!' : 'البطل: ${_selectedHero!['name']}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_selectedHero == null)
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final heroData = await context.push('/hakeem');
-                        if (heroData != null && heroData is Map<String, dynamic>) {
-                          setState(() => _selectedHero = heroData);
-                        }
-                      },
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('اطلب من "حكيم" تجهيز بطل جديد'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.secondary,
-                      ),
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final heroData = await context.push('/hakeem');
-                        if (heroData != null && heroData is Map<String, dynamic>) {
-                          setState(() => _selectedHero = heroData);
-                        }
-                      },
-                      icon: const Icon(Icons.edit),
-                      label: const Text('تغيير البطل'),
+            // حقول الإدخال اليدوية المستردة
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'اسم بطل القصة',
+                      border: OutlineInputBorder(),
                     ),
-                ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 1,
+                  child: TextField(
+                    controller: _ageController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'العمر',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            
+            // خيار تفعيل الأفاتار
+            Container(
+              decoration: BoxDecoration(
+                color: _useAvatar ? AppColors.primary.withOpacity(0.1) : Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _useAvatar ? AppColors.primary : Colors.grey),
+              ),
+              child: SwitchListTile(
+                title: const Text('تفعيل النمط البصري: أفاتار', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(_savedAvatar != null 
+                  ? 'بطل الأفاتار الحالي: ${_savedAvatar!['name']}' 
+                  : 'يتطلب صنع بطل مسبقاً من الشاشة الرئيسية'),
+                value: _useAvatar,
+                activeColor: AppColors.primary,
+                onChanged: (val) {
+                  if (val && _savedAvatar == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('اصنع بطلك أولاً من الشاشة الرئيسية!')),
+                    );
+                    return;
+                  }
+                  setState(() => _useAvatar = val);
+                },
               ),
             ),
             const SizedBox(height: 24),

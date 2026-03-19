@@ -57,4 +57,45 @@ class HakeemService {
       throw Exception('فشل حكيم في تحليل الصورة، تأكد من الاتصال وجرب مرة أخرى.');
     }
   }
+
+  /// دالة للدردشة التفاعلية المباشرة مع حكيم كمستشار
+  static Future<String> chatWithHakeem(List<Map<String, String>> chatHistory, String newMessage) async {
+    if (_apiKey.isEmpty) {
+      throw Exception('GEMINI_API_KEY غير موجود');
+    }
+
+    final model = GenerativeModel(
+      model: 'gemini-pro', // استخدام النسخة المخصصة والمدعومة كلياً للنصوص المدخلة
+      apiKey: _apiKey,
+    );
+
+    // بناء شخصية حكيم بحيث يخاطب أولياء الأمور ولا يخاطب الأطفال أبداً
+    final systemPrompt = '''
+أنت "حكيم"، مرشد ذكي ومستشار في تطبيق "حكواتي" لقصص الأطفال.
+دورك:
+1. الجد الحكيم الذي يوجه "ولي الأمر" (الآباء والأمهات). لا تخاطب الأطفال مباشرة.
+2. المساعد التقني لحل مشاكل التطبيق (الشراء، الكريدت، استنساخ الصوت، الأفاتار).
+3. مستشار تربوي لاقتراح أفكار قصص مفيدة للأطفال.
+
+تحدث بأسلوب محترم، راقٍ، وواضح باللغة العربية.
+رسالة المستخدم (ولي الأمر) الحالية هي:
+$newMessage
+''';
+
+    try {
+      // تفليط (Flatten) السجل إلى نص صريح لتجنب أخطاء هيكلة مصفوفة Gemini
+      final historyContent = chatHistory.map((msg) {
+        final sender = msg['role'] == 'user' ? 'ولي الأمر' : 'حكيم';
+        return "$sender: ${msg['content']}";
+      }).join("\n");
+
+      final finalPrompt = "$systemPrompt\n\nتاريخ المحادثة السابقة:\n$historyContent\n\nأجب الآن كحكيم على الرسالة الحالية بتجاوب مناسب ومفيد.";
+
+      final response = await model.generateContent([Content.text(finalPrompt)]);
+      return response.text ?? 'المعذرة يا طال عمرك، لم أستطع الاستيعاب بالكامل.';
+    } catch (e) {
+      debugPrint('[HakeemService] Error chatting: $e');
+      return 'المعذرة، يبدو أن هناك عطلاً في شبكة الاتصال بالمكتبة السحرية.';
+    }
+  }
 }

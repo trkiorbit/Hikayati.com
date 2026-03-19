@@ -39,6 +39,9 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
   Map<String, dynamic>? _generatedStoryData;
   String? _generationError;
 
+  bool _isAudioFinished = false;
+  bool _isGenerationFinished = false;
+
   // مؤقت نصوص التقدم الزمني
   Timer? _progressTimer;
   int _currentStepIndex = 0;
@@ -81,6 +84,13 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
   }
 
   Future<void> _playMagicAudioAfterDelay() async {
+    _audioPlayer.onPlayerComplete.listen((event) {
+      if (mounted) {
+        setState(() => _isAudioFinished = true);
+        _checkAndNavigate();
+      }
+    });
+
     await Future.delayed(const Duration(seconds: 4));
     if (!mounted || _isNavigating) return;
 
@@ -91,6 +101,10 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
       AudioCache.instance.prefix = 'assets/'; // إعادته للوضع الطبيعي
     } catch (e) {
       debugPrint('[Intro] خطأ في تشغيل الصوت: $e');
+      if (mounted) {
+        setState(() => _isAudioFinished = true);
+        _checkAndNavigate();
+      }
     }
   }
 
@@ -114,21 +128,24 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
         return;
       }
 
-      // ضمان إكمال مدة لا تقل عن 6 ثواني للفيديو لكي يظهر بشكل أفضل
-      final timeSpent = DateTime.now().difference(_startTime).inSeconds;
-      if (timeSpent < 6) {
-        await Future.delayed(Duration(seconds: 6 - timeSpent));
-      }
+      // لا نستخدم future.delayed هنا بعد الآن، ننتظر انتهاء الصوت عبر isAudioFinished
       
       if (!mounted) return;
 
-      debugPrint('[Intro] اكتمل التوليد - الانتقال للسينما');
+      debugPrint('[Intro] اكتمل التوليد.');
       _generatedStoryData = storyData;
-      _navigateToCinema();
+      setState(() => _isGenerationFinished = true);
+      _checkAndNavigate();
     } catch (e) {
       debugPrint('[Intro] خطأ في التوليد: $e');
       _generationError = 'حدث خطأ: ${e.toString()}';
       if (mounted) _navigateOnError();
+    }
+  }
+
+  void _checkAndNavigate() {
+    if (_isAudioFinished && _isGenerationFinished) {
+      _navigateToCinema();
     }
   }
 

@@ -34,6 +34,23 @@ class UnifiedEngine {
       final String storyStyle = requestData['storyStyle'] ?? 'مغامرة';
       final String imageStyle = requestData['imageStyle'] ?? 'كرتوني';
       final String heroVisualDescription = requestData['heroVisualDescription'] ?? '';
+      final bool useAvatar = requestData['useAvatar'] == true;
+
+      String avatarDirective;
+      if (useAvatar && heroVisualDescription.isNotEmpty) {
+        avatarDirective = '''
+      - البصمة البصرية الثابتة للبطل (الأفاتار المحفوظ) - يجب استخدامها حَرفياً: $heroVisualDescription
+      - يجب أن تبدأ كل صورة بوصف الشخصية الرئيسية والستايل مثل:
+      "A full-body shot of a $heroAge years old child named $heroName, [البصمة البصرية الثابتة للبطل], in $imageStyle style..."
+        ''';
+      } else {
+        avatarDirective = '''
+      - قم بوصف ملامح الشخصية وملابسها من خيالك بشكل يتوافق مع العمر ($heroAge).
+      - يجب أن تحتفظ كل صورة بنفس وصف الملامح والملابس تماماً وبدون أي تغيير أو تناقض (التطابق التام بين المشاهد).
+      - يجب أن تبدأ كل صورة بوصف شخصية البطل مثل:
+      "A full-body shot of a $heroAge years old child named $heroName, wearing [consistent plain clothes], in $imageStyle style..."
+        ''';
+      }
 
       // بناء prompt دقيق وموجه لإرجاع JSON مع تعليمات قاسية للحفاظ على مظهر الشخصية
       final String systemPrompt =
@@ -49,10 +66,7 @@ class UnifiedEngine {
       2. "image_prompt_en": وصف بصري تفصيلي بالإنجليزية للمشهد.
       
       *** تعليمات قاطعة وإلزامية لصور المشاهد (CRITICAL DIRECTIVES): ***
-      - البصمة البصرية الثابتة للبطل (يجب استخدامها حَرفياً): $heroVisualDescription
-      - يجب أن تبدأ كل صورة بوصف الشخصية الرئيسية والستايل مثل:
-      "A full-body shot of a $heroAge years old child named $heroName, [أدخل البصمة البصرية الثابتة هنا كما هي], in $imageStyle style..."
-      - يجب أن يكون وصف ملامح الشخصية وملابسها متطابقاً بنسبة 100% في المشاهد الثلاثة (Consistency is Key).
+$avatarDirective
       - دورك كحارس جودة (Quality Guard): يمنع رسم الجسد مقطوعاً أو إخفاء أطرافه. يجب أن تكون الشخصية كاملة ومرئية بوضوح في المنتصف. يمنع الخلط مع الكائنات (لا أرنب بشري مثلاً).
       - يجب أن تذكر ستايل الرسم "$imageStyle style" بوضوح في كل image_prompt.
       

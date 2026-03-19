@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,11 +23,15 @@ class HomeScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الإعدادات')));
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                const Text('100', style: TextStyle(color: warmGold, fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(width: 4),
+                const Icon(Icons.stars, color: warmGold, size: 28),
+              ],
+            ),
           ),
         ],
       ),
@@ -53,7 +57,12 @@ class HomeScreen extends StatelessWidget {
             
             const SizedBox(height: 20),
             
-            // 5. قسم القصص المميزة
+            // 5. قسم بناء الأبطال وحكيم
+            _buildHeroesAndHakeemSection(context),
+
+            const SizedBox(height: 20),
+            
+            // 6. قسم القصص المميزة
             _buildSectionTitle('قصص مميزة', () {}),
             _buildHorizontalStoryList(isFeatured: true),
             
@@ -125,31 +134,63 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildMainBanner(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 180,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryPurple, deepBlack],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: deepBlack, // خلفية سوداء ليتناسق مع الهوية
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          )
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, // يبدأ من اليمين في RTL
+          children: [
+            const Icon(Icons.stars, color: warmGold, size: 40),
+            const SizedBox(height: 10),
+            const Text(
+              'اجعل طفلك بطل القصة',
+              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              'قصص مخصصة، تجربة سينمائية، وذكريات لا تُنسى',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+            
+            // أيقونات صغيرة سريعة (فعالة)
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildMiniIconButton(Icons.person, () => _showTopSnackBar(context, 'صفحة الملف الشخصي')),
+                _buildMiniIconButton(Icons.face, () => context.push('/create-avatar')),
+                _buildMiniIconButton(Icons.mic, () => _showTopSnackBar(context, 'استنسخ صوتك (قريباً)')),
+                _buildMiniIconButton(Icons.account_balance_wallet, () => _showTopSnackBar(context, 'إعادة الشحن (الكريدت الحالي: 100)')),
+                _buildMiniIconButton(Icons.store, () => _showTopSnackBar(context, 'متجر حكواتي')),
+              ],
+            ),
+          ],
         ),
       ),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.auto_awesome, color: warmGold, size: 40),
-          SizedBox(height: 10),
-          Text(
-            'اجعل طفلك بطل القصة',
-            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 5),
-          Text(
-            'قصص مخصصة، تجربة سينمائية، وذكريات لا تُنسى',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-        ],
+    );
+  }
+
+  void _showTopSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Widget _buildMiniIconButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: CircleAvatar(
+        radius: 20,
+        backgroundColor: Colors.white.withOpacity(0.1),
+        child: Icon(icon, color: warmGold, size: 20),
       ),
     );
   }
@@ -176,6 +217,99 @@ class HomeScreen extends StatelessWidget {
               Text('أنشئ قصة جديدة', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroesAndHakeemSection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        children: [
+          _buildActionCard(
+            context,
+            title: 'اصنع بطلك',
+            subtitle: 'ارفع صورة ليقوم حكيم بصنع بصمتك البصرية الخاصة للمغامرات!',
+            icon: Icons.face,
+            bgColor: deepBlack,
+            textColor: warmGold,
+            outlineColor: Colors.transparent,
+            onTap: () => context.push('/create-avatar'),
+          ),
+          const SizedBox(height: 12),
+          _buildActionCard(
+            context,
+            title: 'المستشار حكيم',
+            subtitle: 'تحدث مع حكيم للحصول على أفكار قصص أو مساعدة في التطبيق.',
+            icon: Icons.psychology,
+            bgColor: deepBlack,
+            textColor: warmGold,
+            outlineColor: Colors.transparent,
+            onTap: () => context.push('/hakeem'),
+          ),
+          const SizedBox(height: 12),
+          _buildActionCard(
+            context,
+            title: 'استنسخ صوتك',
+            subtitle: 'سجل صوتك ليقرأ التطبيق القصص بصوتك أنت (ميزة خاصة).',
+            icon: Icons.record_voice_over,
+            bgColor: deepBlack,
+            textColor: warmGold,
+            outlineColor: Colors.transparent,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('واجهة استنساخ الصوت تحت الإنشاء!')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard(BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color bgColor,
+    required Color textColor,
+    required Color outlineColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: outlineColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 32, color: textColor),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: TextStyle(fontSize: 13, color: textColor.withOpacity(0.8))),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: textColor.withOpacity(0.5)),
+          ],
         ),
       ),
     );
