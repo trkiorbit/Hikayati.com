@@ -11,32 +11,36 @@ class StoryCreationScreen extends StatefulWidget {
 }
 
 class _StoryCreationScreenState extends State<StoryCreationScreen> {
-  final _nameController = TextEditingController();
-  final _ageController = TextEditingController();
   final _themeController = TextEditingController();
+
+  Map<String, dynamic>? _selectedHero; // يمثل البطل المختار
 
   String _selectedStyle = '3d-model';
   String _selectedVoice = 'alloy';
   bool _isLoading = false;
 
   void _generateStory() async {
-    if (_nameController.text.isEmpty ||
-        _ageController.text.isEmpty ||
-        _themeController.text.isEmpty) {
+    // التأكد من اختيار بطل أولاً
+    if (_selectedHero == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تعبئة جميع الحقول لبدء السحر!')),
+        const SnackBar(content: Text('يرجى اختيار بطلك أولاً أو طلب حكيم لصنع بطل جديد.')),
       );
       return;
     }
 
+    final heroName = _selectedHero!['name'] ?? 'بطل حكواتي';
+    final heroAge = _selectedHero!['age'] ?? '7';
+    final storyTheme = _themeController.text.trim().isNotEmpty ? _themeController.text.trim() : 'مغامرة خيالية ومشوقة';
+
     setState(() => _isLoading = true);
 
     try {
-      // 1. تجميع بيانات الطلب للمحرك
+      // 1. تجميع بيانات الطلب للمحرك مع الوصف البصري المستخرج من حكيم
       final requestData = {
-        'heroName': _nameController.text,
-        'heroAge': _ageController.text,
-        'storyStyle': _themeController.text,
+        'heroName': heroName,
+        'heroAge': heroAge,
+        'heroVisualDescription': _selectedHero!['promptSnippet'] ?? '', // البصمة البصرية الثابتة
+        'storyStyle': storyTheme,
         'imageStyle': _selectedStyle,
       };
 
@@ -65,23 +69,51 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم البطل/البطلة',
-                border: OutlineInputBorder(),
+            // قسم اختيار البطل (تمهيد لحكيم والأفاتار)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primary),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    _selectedHero == null ? 'لم تختر بطلك بعد!' : 'البطل: ${_selectedHero!['name']}',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_selectedHero == null)
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final heroData = await context.push('/hakeem');
+                        if (heroData != null && heroData is Map<String, dynamic>) {
+                          setState(() => _selectedHero = heroData);
+                        }
+                      },
+                      icon: const Icon(Icons.person_add),
+                      label: const Text('اطلب من "حكيم" تجهيز بطل جديد'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.secondary,
+                      ),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final heroData = await context.push('/hakeem');
+                        if (heroData != null && heroData is Map<String, dynamic>) {
+                          setState(() => _selectedHero = heroData);
+                        }
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('تغيير البطل'),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _ageController,
-              decoration: const InputDecoration(
-                labelText: 'العمر',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             TextField(
               controller: _themeController,
               decoration: const InputDecoration(

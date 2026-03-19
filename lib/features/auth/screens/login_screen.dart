@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,8 +13,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isLoginMode = true;
+  bool _rememberMe = true;
 
-  Future<void> _signInOrSignUp() async {
+  Future<void> _submit() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('الرجاء إدخال البريد الإلكتروني وكلمة المرور')),
@@ -25,39 +27,31 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // محاولة تسجيل الدخول
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
-      if (mounted) context.go('/'); // الانتقال للرئيسية بعد النجاح
-    } on AuthException catch (e) {
-      // إذا الحساب غير موجود، ننشئ حساب جديد تلقائياً
-      if (e.message.contains('Invalid login credentials')) {
-        try {
-          await Supabase.instance.client.auth.signUp(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تم إنشاء الحساب بنجاح!')),
-            );
-            context.go('/'); // الانتقال للرئيسية
-          }
-        } catch (signUpError) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('خطأ في التسجيل: $signUpError')),
-            );
-          }
-        }
+      if (_isLoginMode) {
+        // تسجيل الدخول
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+        if (mounted) context.go('/');
       } else {
+        // إنشاء حساب جديد
+        await Supabase.instance.client.auth.signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ: ${e.message}')),
+            const SnackBar(content: Text('تم إنشاء الحساب بنجاح!')),
           );
+          context.go('/');
         }
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: ${e.message}')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -70,6 +64,31 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    if (_emailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الرجاء إدخال البريد الإلكتروني أولاً لإرسال رابط إعادة التعيين')),
+      );
+      return;
+    }
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(
+        _emailController.text.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في استعادة كلمة المرور: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF6A0DAD), Color(0xFF1A1A2E)], // ألوان حكواتي
+            colors: [Color(0xFF6A0DAD), Color(0xFF1A1A2E)],
           ),
         ),
         child: Center(
@@ -94,9 +113,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'اجعل طفلك بطل القصة',
-                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                Text(
+                  _isLoginMode ? 'مرحباً بعودتك يا بطل' : 'أنشئ حسابك وابدأ المغامرة',
+                  style: const TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 const SizedBox(height: 40),
                 TextField(
@@ -132,14 +151,41 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: const Icon(Icons.lock, color: Colors.white70),
                   ),
                 ),
-                const SizedBox(height: 30),
+                if (_isLoginMode) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Theme(
+                            data: ThemeData(unselectedWidgetColor: Colors.white70),
+                            child: Checkbox(
+                              value: _rememberMe,
+                              activeColor: const Color(0xFFFFD700),
+                              checkColor: Colors.black,
+                              onChanged: (val) => setState(() => _rememberMe = val!),
+                            ),
+                          ),
+                          const Text('تذكرني', style: TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: _resetPassword,
+                        child: const Text('نسيت كلمة المرور؟', style: TextStyle(color: Color(0xFFFFD700))),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  const SizedBox(height: 16),
+                ],
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _signInOrSignUp,
+                    onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700), // لون ذهبي
+                      backgroundColor: const Color(0xFFFFD700),
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -147,7 +193,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.black)
-                        : const Text('دخول / تسجيل', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        : Text(
+                            _isLoginMode ? 'تسجيل الدخول' : 'إنشاء حساب جديد',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextButton(
+                  onPressed: () => setState(() => _isLoginMode = !_isLoginMode),
+                  child: Text(
+                    _isLoginMode
+                        ? 'ليس لديك حساب؟ سجل الآن'
+                        : 'لديك حساب بالفعل؟ سجل دخولك',
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ),
               ],

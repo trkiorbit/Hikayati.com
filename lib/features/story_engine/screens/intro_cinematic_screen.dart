@@ -9,9 +9,9 @@
 /// المقدمة هي ملف محلي: assets/videos/intro_video.mp4
 /// يمكن استبداله بأي فيديو في أي وقت دون تعديل الكود
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:video_player/video_player.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
 import 'package:hikayati/features/story_engine/services/unified_engine.dart';
@@ -32,39 +32,69 @@ class IntroCinematicScreen extends StatefulWidget {
 }
 
 class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
-  late VideoPlayerController _videoController;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _isVideoInitialized = false;
   bool _isNavigating = false;
 
-  // نتيجة التوليد
+  // مسار التوليد
   Map<String, dynamic>? _generatedStoryData;
   String? _generationError;
+
+  // مؤقت نصوص التقدم الزمني
+  Timer? _progressTimer;
+  int _currentStepIndex = 0;
+  late List<String> _loadingSteps;
+
+  // إضافة وقت البدء لضمان الحد الأدنى قبل الانتقال
+  late DateTime _startTime;
 
   @override
   void initState() {
     super.initState();
-    // الخطوتان تعملان بالتوازي بدون انتظار بعضهما
-    _playIntroVideo();
+    _startTime = DateTime.now();
+
+    final heroName = widget.requestData['heroName'] ?? 'البطل';
+    _loadingSteps = [
+      'بدء استدعاء السحر يا $heroName...',
+      'جاري بناء حبكة القصة...',
+      'جاري رسم المشهد الأول...',
+      'تلوين المشهد الثاني...',
+      'التقاط تفاصيل المشهد الثالث...',
+      'اللمسات الأخـيرة، استعد يا $heroName!',
+    ];
+
+    // تبديل النص كل ثانية ونصف
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
+      if (mounted) {
+        setState(() {
+          if (_currentStepIndex < _loadingSteps.length - 1) {
+            _currentStepIndex++;
+          }
+        });
+      }
+    });
+
+    // تشغيل التأثير الصوتي بعد مرور 4 ثوانٍ
+    _playMagicAudioAfterDelay();
+
+    // تشغيل التوليد
     _generateStoryInBackground();
   }
 
-  // ===================================================
-  // 1. تشغيل المقدمة (مستقلة - لا تعرف شيئاً عن التوليد)
-  // ===================================================
-  Future<void> _playIntroVideo() async {
-    _videoController = VideoPlayerController.asset('assets/videos/intro_video.mp4');
+  Future<void> _playMagicAudioAfterDelay() async {
+    await Future.delayed(const Duration(seconds: 4));
+    if (!mounted || _isNavigating) return;
+
     try {
-      await _videoController.initialize();
-      if (!mounted) return;
-      setState(() => _isVideoInitialized = true);
-      await _videoController.play();
-      await _audioPlayer.play(AssetSource('audio/intro_audio.mp3'));
+      // إزالة مسار الأصول الافتراضي للوصول لملف الجذر كما طلب المستخدم
+      AudioCache.instance.prefix = '';
+      await _audioPlayer.play(AssetSource('صوت كان ياما كان.m4a'));
+      AudioCache.instance.prefix = 'assets/'; // إعادته للوضع الطبيعي
     } catch (e) {
-      debugPrint('[Intro] Video/Audio error: $e');
-      // إن فشل الفيديو، انتظر القصة فقط لا تنقطع من هنا
+      debugPrint('[Intro] خطأ في تشغيل الصوت: $e');
     }
   }
+
+  // تم إزالة ملف الفيديو بناء على طلب المستخدم ليكتفى بـ الصوت
 
   // ===================================================
   // 2. توليد القصة في الخلفية
@@ -84,6 +114,14 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
         return;
       }
 
+      // ضمان إكمال مدة لا تقل عن 6 ثواني للفيديو لكي يظهر بشكل أفضل
+      final timeSpent = DateTime.now().difference(_startTime).inSeconds;
+      if (timeSpent < 6) {
+        await Future.delayed(Duration(seconds: 6 - timeSpent));
+      }
+      
+      if (!mounted) return;
+
       debugPrint('[Intro] اكتمل التوليد - الانتقال للسينما');
       _generatedStoryData = storyData;
       _navigateToCinema();
@@ -101,10 +139,6 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
     if (_isNavigating || _generatedStoryData == null) return;
     _isNavigating = true;
 
-    // إيقاف المقدمة
-    try {
-      _videoController.pause();
-    } catch (_) {}
     _audioPlayer.stop();
 
     if (mounted) {
@@ -122,9 +156,6 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
     if (_isNavigating) return;
     _isNavigating = true;
 
-    try {
-      _videoController.pause();
-    } catch (_) {}
     _audioPlayer.stop();
 
     if (mounted) {
@@ -137,9 +168,7 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
 
   @override
   void dispose() {
-    try {
-      _videoController.dispose();
-    } catch (_) {}
+    _progressTimer?.cancel();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -149,52 +178,31 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
     final heroName = widget.requestData['heroName'] ?? 'البطل';
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1A1A2E), // لون ليلي سحري
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. طبقة الفيديو
-          if (_isVideoInitialized)
-            FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _videoController.value.size.width,
-                height: _videoController.value.size.height,
-                child: VideoPlayer(_videoController),
-              ),
-            )
-          else
-            const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
-
-          // 2. طبقة تلميح التوليد في الأسفل
-          Positioned(
-            bottom: 48,
-            left: 0,
-            right: 0,
+          // 1. خلفية بديلة جميلة بدلاً من الفيديو
+          Center(
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white54,
-                    strokeWidth: 2,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const Icon(Icons.auto_awesome, size: 80, color: Color(0xFFFFD700)),
+                const SizedBox(height: 20),
                 Text(
-                  'نجهز قصة $heroName...',
-                  textAlign: TextAlign.center,
+                  _loadingSteps[_currentStepIndex],
                   style: const TextStyle(
-                    color: Colors.white60,
-                    fontSize: 14,
+                    fontSize: 22,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
+
+          // تم إزالة طبقة التلميح السفلي القديمة لتجنب تكرار النصوص
         ],
       ),
     );

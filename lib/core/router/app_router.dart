@@ -10,14 +10,19 @@ import '../../features/library/screens/public_library_screen.dart';
 import '../../features/library/screens/private_library_screen.dart';
 import '../../features/story_engine/screens/intro_cinematic_screen.dart';
 import '../../features/story_engine/screens/generation_loading_screen.dart';
+import '../../features/home/screens/app_intro_screen.dart';
+import '../../features/hakeem/screens/hakeem_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/app-intro',
     redirect: (context, state) {
       final session = Supabase.instance.client.auth.currentSession;
       final isAuth = session != null;
       final isGoingToLogin = state.matchedLocation == '/login';
+      final isGoingToIntro = state.matchedLocation == '/app-intro';
+
+      if (isGoingToIntro) return null; // السماح للمقدمة بالظهور للجميع
 
       if (!isAuth && !isGoingToLogin) return '/login';
       if (isAuth && isGoingToLogin) return '/';
@@ -25,8 +30,10 @@ class AppRouter {
       return null;
     },
     routes: [
+      GoRoute(path: '/app-intro', builder: (context, state) => const AppIntroScreen()),
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/hakeem', builder: (context, state) => const HakeemScreen()),
       GoRoute(
         path: '/create-story',
         builder: (context, state) => const StoryCreationScreen(),

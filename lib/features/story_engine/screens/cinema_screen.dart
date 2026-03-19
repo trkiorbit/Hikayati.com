@@ -27,8 +27,8 @@ class _CinemaScreenState extends State<CinemaScreen>
   // التايمر - يعمل فقط بعد انتهاء TTS (buffer فقط)
   // ==================================================
   Timer? _bufferTimer;
-  /// مدة الانتظار بعد انتهاء التلاوة قبل الانتقال
-  static const int _postTtsBufferSeconds = 3;
+  /// مدة الانتظار بعد انتهاء التلاوة قبل الانتقال تم تقليلها إلى ثانية واحدة لسرعة التدفق
+  static const int _postTtsBufferSeconds = 1;
   int _bufferSecondsLeft = 0;
   bool _isSpeaking = false;
   bool _bufferActive = false;
@@ -40,8 +40,6 @@ class _CinemaScreenState extends State<CinemaScreen>
   late Animation<Offset> _textSlideAnim;
   late Animation<double> _textFadeAnim;
 
-  // موسيقى خلفية
-  final AudioPlayer _bgAudio = AudioPlayer();
 
   static const platform = MethodChannel('com.hikayati/secure');
 
@@ -78,7 +76,6 @@ class _CinemaScreenState extends State<CinemaScreen>
     if (_scenes.isNotEmpty) {
       _loadScene(0);
     }
-    _startBackgroundMusic();
   }
 
   Future<void> _secureScreen() async {
@@ -88,13 +85,7 @@ class _CinemaScreenState extends State<CinemaScreen>
     try { await platform.invokeMethod('unsecureScreen'); } catch (_) {}
   }
 
-  Future<void> _startBackgroundMusic() async {
-    try {
-      await _bgAudio.setVolume(0.12);
-      await _bgAudio.setReleaseMode(ReleaseMode.loop);
-      await _bgAudio.play(AssetSource('audio/intro_audio.mp3'));
-    } catch (_) {}
-  }
+
 
   // ==================================================
   // تحميل مشهد جديد: أنيميشن → TTS → buffer → انتقال
@@ -200,8 +191,6 @@ class _CinemaScreenState extends State<CinemaScreen>
     _imageAnimController.dispose();
     _textAnimController.dispose();
     _stopAllAudio();
-    _bgAudio.stop();
-    _bgAudio.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -222,7 +211,11 @@ class _CinemaScreenState extends State<CinemaScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white70),
-          onPressed: () { _stopAllAudio(); context.go('/home'); },
+          onPressed: () { 
+            _stopAllAudio(); 
+            _bufferTimer?.cancel();
+            context.go('/home'); 
+          },
         ),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
