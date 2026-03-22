@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hikayati/features/story_engine/services/tts_service.dart';
 import 'package:hikayati/features/story_engine/services/elevenlabs_direct_service.dart';
 
@@ -43,14 +44,14 @@ class _CinemaScreenState extends State<CinemaScreen>
   static const platform = MethodChannel('com.hikayati/secure');
 
   bool get _isClonedVoice => widget.voice == 'cloned';
-  String get _clonedVoiceId =>
-      widget.storyData['clonedVoiceId']?.toString() ?? '';
+  String _clonedVoiceId = '';
 
   @override
   void initState() {
     super.initState();
     _secureScreen();
     _scenes = widget.storyData['scenes'] ?? [];
+    _loadVoiceId();
 
     // إعداد الأنيميشن
     _imageAnimController = AnimationController(
@@ -74,6 +75,13 @@ class _CinemaScreenState extends State<CinemaScreen>
 
     if (_scenes.isNotEmpty) {
       _loadScene(0);
+    }
+  }
+
+  Future<void> _loadVoiceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() => _clonedVoiceId = prefs.getString('cloned_voice_id') ?? '');
     }
   }
 

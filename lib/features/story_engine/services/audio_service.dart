@@ -1,6 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// خدمة الصوت الموحدة - تتحكم في دورة الحياة وتمنع الانهيارات
 class AudioService {
@@ -12,18 +17,53 @@ class AudioService {
     if (_isDisposed) return;
 
     try {
-      String audioUrl = '';
-
       if (useClonedVoice) {
         // مسار ElevenLabs: استخدام المفتاح المباشر لاستنساخ الصوت
         final String elevenLabsKey = dotenv.env['ELEVENLABS_API_KEY'] ?? '';
-        // يتم إضافة منطق ElevenLabs الفعلي هنا (API Call لجلب الرابط أو البايتات)
-        // audioUrl = await _fetchElevenLabsAudio(text, elevenLabsKey);
-        debugPrint('[AudioService] توجيه الصوت إلى ElevenLabs');
+        final prefs = await SharedPreferences.getInstance();
+        final String? voiceId = prefs.getString('cloned_voice_id');
+
+        if (elevenLabsKey.isEmpty || voiceId == null) {
+          debugPrint('[AudioService] خطأ: مفتاح ElevenLabs أو Voice ID مفقود.');
+          return;
+        }
+
+        debugPrint('[AudioService] توجيه الصوت إلى ElevenLabs (Voice: $voiceId)');
+        
+        final url = Uri.parse('https://api.elevenlabs.io/v1/text-to-speech/$voiceId');
+        final response = await http.post(
+          url,
+          headers: {
+            'xi-api-key': elevenLabsKey,
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            "text": text,
+            "model_id": "eleven_multilingual_v2", // الموديل الداعم للغة العربية
+            "voice_settings": {
+              "stability": 0.5,
+              "similarity_boost": 0.75
+            }
+          }),
+        );
+
+        if (response.statusCode == 200 && !_isDisposed) {
+          // ElevenLabs يُرجع ملف صوتي كـ Bytes، نقوم بحفظه مؤقتاً لتشغيله
+          final dir = await getTemporaryDirectory();
+          final file = File('${dir.path}/elevenlabs_${DateTime.now().millisecondsSinceEpoch}.mp3');
+          await file.writeAsBytes(response.bodyBytes);
+          
+          await _audioPlayer.play(DeviceFileSource(file.path));
+        } else {
+          debugPrint('[AudioService] فشل ElevenLabs: ${response.statusCode} - ${response.body}');
+          return; // إيقاف التشغيل إذا فشل الجلب
+        }
       } else {
         // مسار Pollinations: خدمة TTS المجانية للقصص العادية
-        audioUrl = 'https://text.pollinations.ai/tts/${Uri.encodeComponent(text)}';
+        final audioUrl = 'https://text.pollinations.ai/tts/${Uri.encodeComponent(text)}';
         debugPrint('[AudioService] توجيه الصوت إلى Pollinations Audio');
+        if (_isDisposed) return;
+        await _audioPlayer.play(UrlSource(audioUrl));
       }
 
       if (_isDisposed || audioUrl.isEmpty) return;

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
 import 'package:hikayati/features/story_engine/services/voice_clone_service.dart';
 import 'package:hikayati/features/story_engine/services/elevenlabs_direct_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class VoiceCloneScreen extends StatefulWidget {
   const VoiceCloneScreen({super.key});
@@ -16,11 +17,13 @@ class VoiceCloneScreen extends StatefulWidget {
 
 class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
   final _audioRecorder = AudioRecorder();
+  final AudioPlayer _audioPlayer = AudioPlayer(); // مشغل للصوت المحلي
 
   bool _isInit = false;
   bool _isRecording = false;
   bool _isLoading = false;
   bool _isPreviewing = false;
+  bool _isPlayingLocal = false; // حالة تشغيل الصوت المحلي
   bool _hasRecording = false;
   String? _recordedFilePath;
   String? _savedVoiceId;
@@ -45,6 +48,7 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
   @override
   void dispose() {
     _audioRecorder.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -65,7 +69,13 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
       _recordedFilePath = '${dir.path}/voice_sample_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
       await _audioRecorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000, sampleRate: 44100),
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc, 
+          bitRate: 128000, 
+          sampleRate: 44100,
+          echoCancel: true, // إلغاء الصدى
+          noiseSuppress: true, // تصفية الضوضاء
+        ),
         path: _recordedFilePath!,
       );
 
@@ -86,7 +96,8 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
       await Future.delayed(const Duration(seconds: 1));
       if (_isRecording && mounted) {
         setState(() => _recordingSeconds++);
-        if (_recordingSeconds >= 60) _stopRecording();
+        // إيقاف تلقائي بعد 15 ثانية (10 ثواني كافية جداً للاستنساخ)
+        if (_recordingSeconds >= 15) _stopRecording();
       }
     }
   }
@@ -107,6 +118,22 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
       }
     } catch (e) {
       debugPrint('[VoiceClone] Stop error: $e');
+    }
+  }
+
+  // تشغيل الصوت المحلي للمراجعة قبل الرفع
+  Future<void> _playLocalRecording() async {
+    if (_recordedFilePath == null) return;
+    try {
+      setState(() => _isPlayingLocal = true);
+      await _audioPlayer.play(DeviceFileSource(_recordedFilePath!));
+      
+      _audioPlayer.onPlayerComplete.listen((_) {
+        if (mounted) setState(() => _isPlayingLocal = false);
+      });
+    } catch (e) {
+      debugPrint('[VoiceClone] Play error: $e');
+      if (mounted) setState(() => _isPlayingLocal = false);
     }
   }
 
@@ -150,6 +177,13 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
         text: 'مرحباً، أنا صوتك المستنسخ، سأقوم برواية أجمل القصص لطفلك.',
         voiceId: _savedVoiceId!,
       );
+    } catch (e) {
+      // إظهار الخطأ للمستخدم (مثل مشكلة الدفع في ElevenLabs)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('عذراً، فشل التشغيل: $e'), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isPreviewing = false);
     }
@@ -274,6 +308,18 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
       children: [
         const Text('✅ تم التقاط العينة الصوتية!', style: TextStyle(color: Colors.blueAccent, fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 40),
+        ElevatedButton.icon(
+          onPressed: _isPlayingLocal ? null : _playLocalRecording,
+          icon: Icon(_isPlayingLocal ? Icons.volume_up : Icons.play_circle_fill),
+          label: Text(_isPlayingLocal ? 'جاري التشغيل...' : 'استمع لتسجيلك أولاً'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white24,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          ),
+        ),
+        const SizedBox(height: 15),
         ElevatedButton.icon(
           onPressed: _uploadAndClone,
           icon: const Icon(Icons.cloud_upload),

@@ -40,6 +40,7 @@ class CreditFees {
 // =============================================
 class ElevenLabsDirectService {
   static AudioPlayer? _activePlayer;
+  static final Map<String, String> _audioCache = {}; // ذاكرة مؤقتة لتقليل التكاليف
 
   /// قراءة نص بصوت محدد عبر ElevenLabs مباشرة
   ///
@@ -50,6 +51,7 @@ class ElevenLabsDirectService {
   static Future<void> speak({
     required String text,
     required String voiceId,
+    bool forceRegenerate = false,
   }) async {
     if (text.trim().isEmpty) return;
 
@@ -60,6 +62,15 @@ class ElevenLabsDirectService {
     }
 
     try {
+      // ✅ التحقق من الـ Cache محلياً قبل استدعاء API (توفير للرصيد)
+      final cacheKey = '${voiceId}_${text.hashCode}';
+      
+      if (!forceRegenerate && _audioCache.containsKey(cacheKey)) {
+        debugPrint('[ElevenLabs] تشغيل من الـ Cache بدون تكلفة API');
+        await _playAudioFile(_audioCache[cacheKey]!);
+        return;
+      }
+
       // إيقاف أي صوت سابق
       await _activePlayer?.stop();
       await _activePlayer?.dispose();
@@ -98,17 +109,11 @@ class ElevenLabsDirectService {
         );
         await tempFile.writeAsBytes(response.bodyBytes);
 
+        // ✅ حفظ المسار في الـ Cache للمرات القادمة
+        _audioCache[cacheKey] = tempFile.path;
         debugPrint('[ElevenLabs] تم حفظ الصوت في: ${tempFile.path}');
 
-        // تشغيل الملف الصوتي
-        final player = AudioPlayer();
-        _activePlayer = player;
-        await player.play(DeviceFileSource(tempFile.path));
-
-        // حذف الملف المؤقت بعد الانتهاء (اختياري)
-        player.onPlayerComplete.listen((_) {
-          tempFile.delete().ignore();
-        });
+        await _playAudioFile(tempFile.path);
       } else {
         debugPrint(
           '[ElevenLabs] خطأ HTTP: ${response.statusCode} - ${response.body}',
@@ -116,6 +121,21 @@ class ElevenLabsDirectService {
       }
     } catch (e) {
       debugPrint('[ElevenLabs] خطأ: ${e.toString()}');
+    }
+  }
+
+  /// تشغيل ملف صوتي محلي
+  static Future<void> _playAudioFile(String filePath) async {
+    try {
+      await _activePlayer?.stop();
+      await _activePlayer?.dispose();
+
+      _activePlayer = AudioPlayer();
+      await _activePlayer!.play(DeviceFileSource(filePath));
+      // الانتظار حتى ينتهي الصوت تماماً قبل الانتقال للمشهد التالي في السينما
+      await _activePlayer!.onPlayerComplete.first;
+    } catch (e) {
+      debugPrint('[ElevenLabs] خطأ التشغيل: $e');
     }
   }
 
