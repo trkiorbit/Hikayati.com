@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hikayati/application/use_cases/get_private_stories_use_case.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -62,9 +63,9 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
             
-            // 6. قسم القصص المميزة
-            _buildSectionTitle('قصص مميزة', () {}),
-            _buildHorizontalStoryList(isFeatured: true),
+            // 6. قسم مكتبتي (مكان القصص المميزة سابقاً)
+            _buildSectionTitle('مكتبتي', () => context.push('/private-library')),
+            _buildPrivateLibraryHorizontalList(),
             
             const SizedBox(height: 20),
             
@@ -110,13 +111,36 @@ class HomeScreen extends StatelessWidget {
             onTap: () => context.push('/private-library'),
           ),
           ListTile(
-            leading: const Icon(Icons.privacy_tip, color: primaryPurple),
-            title: const Text('سياسة الخصوصية'),
-            onTap: () {},
+            leading: const Icon(Icons.person, color: primaryPurple),
+            title: const Text('اصنع بطلك'),
+            onTap: () => context.push('/avatar-lab'),
           ),
           ListTile(
-            leading: const Icon(Icons.description, color: primaryPurple),
-            title: const Text('شروط الاستخدام'),
+            leading: const Icon(Icons.mic, color: primaryPurple),
+            title: const Text('اروي القصة بصوتك'),
+            onTap: () => context.push('/voice-clone'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet, color: primaryPurple),
+            title: const Text('الشحن'),
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('واجهة الشراء قريباً!')),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.store, color: primaryPurple),
+            title: const Text('المتجر'),
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('المتجر الملموس قريباً!')),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip, color: primaryPurple),
+            title: const Text('سياسة الخصوصية'),
             onTap: () {},
           ),
           const Divider(),
@@ -168,8 +192,8 @@ class HomeScreen extends StatelessWidget {
               runSpacing: 12,
               children: [
                 _buildMiniIconButton(Icons.person, () => _showTopSnackBar(context, 'صفحة الملف الشخصي')),
-                _buildMiniIconButton(Icons.face, () => context.push('/create-avatar')),
-                _buildMiniIconButton(Icons.mic, () => _showTopSnackBar(context, 'استنسخ صوتك (قريباً)')),
+                _buildMiniIconButton(Icons.face, () => context.push('/avatar-lab')),
+                _buildMiniIconButton(Icons.mic, () => context.push('/voice-clone')),
                 _buildMiniIconButton(Icons.account_balance_wallet, () => _showTopSnackBar(context, 'إعادة الشحن (الكريدت الحالي: 100)')),
                 _buildMiniIconButton(Icons.store, () => _showTopSnackBar(context, 'متجر حكواتي')),
               ],
@@ -235,7 +259,7 @@ class HomeScreen extends StatelessWidget {
             bgColor: deepBlack,
             textColor: warmGold,
             outlineColor: Colors.transparent,
-            onTap: () => context.push('/create-avatar'),
+            onTap: () => context.push('/avatar-lab'),
           ),
           const SizedBox(height: 12),
           _buildActionCard(
@@ -257,11 +281,7 @@ class HomeScreen extends StatelessWidget {
             bgColor: deepBlack,
             textColor: warmGold,
             outlineColor: Colors.transparent,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('واجهة استنساخ الصوت تحت الإنشاء!')),
-              );
-            },
+            onTap: () => context.push('/voice-clone'),
           ),
         ],
       ),
@@ -359,6 +379,93 @@ class HomeScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildPrivateLibraryHorizontalList() {
+    return FutureBuilder<List<dynamic>>(
+      future: GetPrivateStoriesUseCase().execute(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 180,
+            child: Center(child: CircularProgressIndicator(color: primaryPurple)),
+          );
+        }
+        if (snapshot.hasError) {
+          return const SizedBox(
+            height: 180,
+            child: Center(child: Text('حدث خطأ في جلب مكتبتك')),
+          );
+        }
+        
+        final stories = snapshot.data ?? [];
+        if (stories.isEmpty) {
+          return Container(
+            height: 120,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                'لم تصنع قصصاً بعد! ابدأ مغامرتك الآن.',
+                style: TextStyle(color: deepBlack, fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            itemCount: stories.length,
+            itemBuilder: (context, index) {
+              final story = stories[index];
+              return Container(
+                width: 130,
+                margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                decoration: BoxDecoration(
+                  color: warmGold.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: warmGold, width: 2),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (story['cover_image'] != null && story['cover_image'].toString().isNotEmpty)
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                          child: Image.network(
+                            story['cover_image'],
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (ctx, err, stack) => const Icon(Icons.image_not_supported, size: 50, color: primaryPurple),
+                          ),
+                        ),
+                      )
+                    else
+                      const Expanded(child: Center(child: Icon(Icons.menu_book, size: 50, color: primaryPurple))),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        story['title'] ?? 'قصة مجهولة',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

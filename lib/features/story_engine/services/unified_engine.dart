@@ -9,6 +9,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hikayati/core/network/supabase_service.dart';
+import 'package:hikayati/features/story_engine/services/prompt_builder_service.dart';
+import 'package:hikayati/features/story_engine/services/content_monitor_service.dart';
 
 class UnifiedEngine {
   /// دالة توليد القصة
@@ -33,26 +36,9 @@ class UnifiedEngine {
       final String heroAge = requestData['heroAge']?.toString() ?? '7';
       final String storyStyle = requestData['storyStyle'] ?? 'مغامرة';
       final String imageStyle = requestData['imageStyle'] ?? 'كرتوني';
-      final String heroVisualDescription = requestData['heroVisualDescription'] ?? '';
       final bool useAvatar = requestData['useAvatar'] == true;
 
-      String avatarDirective;
-      if (useAvatar && heroVisualDescription.isNotEmpty) {
-        avatarDirective = '''
-      - البصمة البصرية الثابتة للبطل (الأفاتار المحفوظ) - يجب استخدامها حَرفياً: $heroVisualDescription
-      - يجب أن تبدأ كل صورة بوصف الشخصية الرئيسية والستايل مثل:
-      "A full-body shot of a $heroAge years old child named $heroName, [البصمة البصرية الثابتة للبطل], in $imageStyle style..."
-        ''';
-      } else {
-        avatarDirective = '''
-      - قم بوصف ملامح الشخصية وملابسها من خيالك بشكل يتوافق مع العمر ($heroAge).
-      - يجب أن تحتفظ كل صورة بنفس وصف الملامح والملابس تماماً وبدون أي تغيير أو تناقض (التطابق التام بين المشاهد).
-      - يجب أن تبدأ كل صورة بوصف شخصية البطل مثل:
-      "A full-body shot of a $heroAge years old child named $heroName, wearing [consistent plain clothes], in $imageStyle style..."
-        ''';
-      }
-
-      // بناء prompt دقيق وموجه لإرجاع JSON مع تعليمات قاسية للحفاظ على مظهر الشخصية
+      // بناء prompt دقيق وموجه لإرجاع JSON مع تعليمات قاسية للحفاظ على القصة
       final String systemPrompt =
           '''
       أنت مؤلف قصص أطفال محترف ومبدع.
@@ -63,12 +49,7 @@ class UnifiedEngine {
       2. "scenes": مصفوفة (Array) من 3 مشاهد فقط.
       كل مشهد يحتوي على:
       1. "text_ar": نص المشهد بالعربية (سطرين كحد أقصى).
-      2. "image_prompt_en": وصف بصري تفصيلي بالإنجليزية للمشهد.
-      
-      *** تعليمات قاطعة وإلزامية لصور المشاهد (CRITICAL DIRECTIVES): ***
-$avatarDirective
-      - دورك كحارس جودة (Quality Guard): يمنع رسم الجسد مقطوعاً أو إخفاء أطرافه. يجب أن تكون الشخصية كاملة ومرئية بوضوح في المنتصف. يمنع الخلط مع الكائنات (لا أرنب بشري مثلاً).
-      - يجب أن تذكر ستايل الرسم "$imageStyle style" بوضوح في كل image_prompt.
+      2. "scene_description_en": وصف بصري دقيق باللغة الإنجليزية للأفعال والمكان والبيئة في المشهد (مثلاً: A young child running in a magical glowing forest). لا تصف الملامح أو الملابس الثابتة للشخصية، فقط اذكر الحدث.
       
       يجب أن يكون الرد JSON فقط، بدون أي نص إضافي.
       ''';
@@ -129,7 +110,7 @@ $avatarDirective
         }
       } catch (e) {
         debugPrint('[Engine] خطأ في تحليل JSON: $e');
-        return _fallbackStory('حدث خطأ أثناء تحليل القصة.');
+        return _fallbackStory('حدث خطأ أثناء تحليل القصة: $e');
       }
 
       debugPrint('[Engine] بدء توليد روابط الصور...');
@@ -140,14 +121,49 @@ $avatarDirective
 
       for (var scene in scenesRaw) {
         final String text = scene['text_ar'] ?? 'مشهد بدون نص.';
-        final String imagePromptEn =
-            scene['image_prompt_en'] ??
-            'A children story scene in $imageStyle style.';
+        final String sceneDescEn =
+            scene['scene_description_en'] ?? scene['image_prompt_en'] ?? 'A scene';
         
+        // ✅ الربط الإجباري: كل الصور تمر عبر PromptBuilderService
+        final String finalImagePrompt = PromptBuilderService.buildPrompt(
+          sceneDescription: sceneDescEn, 
+          imageStyle: imageStyle, 
+          avatarData: useAvatar ? requestData['avatarData'] : null,
+        );
+
+        // مراقبة المحتوى (Content Monitor) - للصور والنصوص
+        String safePrompt = finalImagePrompt;
+        if (!ContentMonitorService.isContentSafe(finalImagePrompt)) {
+           debugPrint('[Monitor] 🚫 تم اكتشاف محتوى غير آمن في وصف الصورة. سيتم استخدام بديل آمن.');
+           safePrompt = 'A beautiful safe child-friendly scene in $imageStyle style.';
+        }
+
+        String safeText = text;
+        if (!ContentMonitorService.isContentSafe(text)) {
+           debugPrint('[Monitor] 🚫 تم اكتشاف محتوى غير آمن في نص القصة الأجنبي/العربي.');
+           safeText = 'مشهد آمن ولطيف.';
+        }
+
+        // تنظيف الـ Prompt النهائي من الرموز المعقدة لمنع الخطأ 400
+        final String ultraSafePrompt = safePrompt.replaceAll(RegExp(r'[^\x00-\x7F]+'), '').trim();
+
         // بناء رابط الصورة باستخدام النطاق وتحديد موديل flux واستخدام نفس (storySeed) لجميع المشاهد
+        // إصلاح 401: التأكد من صيغة المفتاح أو إزالته إذا كان فارغاً
+        final String keyParam = imageApiKey.isNotEmpty ? '&key=$imageApiKey' : '';
+        
+        // السلاح السري للاتساق: إضافة الصورة المرجعية إذا كان الأفاتار مفعلاً
+        String referenceImageParam = '';
+        if (useAvatar && requestData['avatarData'] != null) {
+          final refUrl = requestData['avatarData']['reference_image_url'];
+          if (refUrl != null && refUrl.toString().isNotEmpty) {
+            referenceImageParam = '&image=${Uri.encodeComponent(refUrl)}';
+          }
+        }
+        
         final String imageUrl =
-            'https://gen.pollinations.ai/image/${Uri.encodeComponent(imagePromptEn)}?model=flux&width=1024&height=512&nologo=true&seed=$storySeed${imageApiKey.isNotEmpty ? '&key=$imageApiKey' : ''}';
-        scenes.add({'text': text, 'imageUrl': imageUrl});
+            'https://gen.pollinations.ai/image/${Uri.encodeComponent(ultraSafePrompt)}?model=flux&width=1024&height=512&nologo=true&seed=${storySeed + scenes.length}$keyParam$referenceImageParam';
+            
+        scenes.add({'text': safeText, 'imageUrl': imageUrl});
       }
 
       debugPrint('[Engine] تم توليد المشاهد بنجاح.');
@@ -163,6 +179,9 @@ $avatarDirective
       try {
         final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null) {
+          // ✅ Batch 2 Fix: ضمان وجود profile قبل حفظ القصة (يمنع خطأ stories_user_id_fkey)
+          await SupabaseService.ensureProfileExists(userId);
+
           final savedResponse = await Supabase.instance.client.from('stories').insert({
             'user_id': userId,
             'title': generatedTitle,
@@ -173,12 +192,12 @@ $avatarDirective
           }).select().single();
           
           storyData['id'] = savedResponse['id'];
-          debugPrint('[Engine] تمت عملية الحفظ في Supabase بنجاح، رقم القصة: ${savedResponse['id']}');
+          debugPrint('[Engine] ✅ تمت عملية الحفظ في Supabase بنجاح، رقم القصة: ${savedResponse['id']}');
         } else {
           debugPrint('[Engine] تحذير: لا يوجد مستخدم مسجل لحفظ القصة.');
         }
       } catch (dbError) {
-        debugPrint('[Engine] خطأ في حفظ القصة بقاعدة البيانات: $dbError');
+        debugPrint('[Engine] ❌ خطأ في حفظ القصة بقاعدة البيانات: $dbError');
       }
 
       return storyData;

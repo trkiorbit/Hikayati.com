@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hikayati/core/network/supabase_service.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/application/use_cases/get_public_stories_use_case.dart';
+import 'package:hikayati/application/use_cases/unlock_public_story_use_case.dart';
 
 class PublicLibraryScreen extends StatefulWidget {
   const PublicLibraryScreen({super.key});
@@ -10,7 +12,9 @@ class PublicLibraryScreen extends StatefulWidget {
 }
 
 class _PublicLibraryScreenState extends State<PublicLibraryScreen> {
-  final _client = SupabaseService.client;
+  final _getPublicStoriesUseCase = GetPublicStoriesUseCase();
+  final _unlockPublicStoryUseCase = UnlockPublicStoryUseCase();
+  
   List<dynamic> _stories = [];
   bool _isLoading = true;
 
@@ -22,15 +26,14 @@ class _PublicLibraryScreenState extends State<PublicLibraryScreen> {
 
   Future<void> _fetchPublicStories() async {
     try {
-      final data = await _client
-          .from('public_stories')
-          .select()
-          .order('created_at', ascending: false);
+      final data = await _getPublicStoriesUseCase.execute();
 
-      setState(() {
-        _stories = data;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _stories = data;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -74,19 +77,7 @@ class _PublicLibraryScreenState extends State<PublicLibraryScreen> {
     }
 
     try {
-      // Deduct Credits
-      await SupabaseService.deductCredits(
-        price,
-        'Purchase public story: ${story['id']}',
-      );
-
-      // Record Purchase (Optional depending on how you structure access)
-      await _client.from('purchases').insert({
-        'user_id': _client.auth.currentUser!.id,
-        'story_id': story['id'],
-        'unlock_type': 'access',
-        'credits_paid': price,
-      });
+      await _unlockPublicStoryUseCase.execute(story);
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
@@ -97,14 +88,14 @@ class _PublicLibraryScreenState extends State<PublicLibraryScreen> {
           ),
         );
         // Play story in cinema
-        // context.push('/cinema', extra: story);
+        context.push('/cinema', extra: {'storyData': story, 'voice': 'alloy'});
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: AppColors.error,
           ),
         );

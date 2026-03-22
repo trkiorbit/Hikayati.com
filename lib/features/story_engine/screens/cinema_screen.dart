@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -175,7 +174,7 @@ class _CinemaScreenState extends State<CinemaScreen>
       ),
     );
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) context.go('/home');
+      if (mounted) context.go('/');
     });
   }
 

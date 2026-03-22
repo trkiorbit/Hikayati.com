@@ -12,7 +12,8 @@ import '../../features/story_engine/screens/intro_cinematic_screen.dart';
 import '../../features/story_engine/screens/generation_loading_screen.dart';
 import '../../features/home/screens/app_intro_screen.dart';
 import '../../features/hakeem/screens/hakeem_chat_screen.dart';
-import '../../features/hakeem/screens/create_avatar_screen.dart';
+import '../../features/avatar_lab/screens/avatar_lab_screen.dart';
+import '../../features/voice_clone/screens/voice_clone_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -35,7 +36,7 @@ class AppRouter {
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/hakeem', builder: (context, state) => const HakeemChatScreen()),
-      GoRoute(path: '/create-avatar', builder: (context, state) => const CreateAvatarScreen()),
+      GoRoute(path: '/avatar-lab', builder: (context, state) => const AvatarLabScreen()),
       GoRoute(
         path: '/create-story',
         builder: (context, state) => const StoryCreationScreen(),
@@ -76,6 +77,10 @@ class AppRouter {
       GoRoute(
         path: '/private-library',
         builder: (context, state) => const PrivateLibraryScreen(),
+      ),
+      GoRoute(
+        path: '/voice-clone',
+        builder: (context, state) => const VoiceCloneScreen(),
       ),
     ],
   );

@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:hikayati/core/network/supabase_service.dart';
-import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hikayati/application/use_cases/get_private_stories_use_case.dart';
 
 class PrivateLibraryScreen extends StatefulWidget {
   const PrivateLibraryScreen({super.key});
@@ -10,83 +11,116 @@ class PrivateLibraryScreen extends StatefulWidget {
 }
 
 class _PrivateLibraryScreenState extends State<PrivateLibraryScreen> {
-  final _client = SupabaseService.client;
+  final _getPrivateStoriesUseCase = GetPrivateStoriesUseCase();
   List<dynamic> _stories = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchStories();
+    _fetchPrivateStories();
   }
 
-  Future<void> _fetchStories() async {
+  Future<void> _fetchPrivateStories() async {
     try {
-      final userId = _client.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final data = await _client
-          .from('stories')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
-
-      setState(() {
-        _stories = data;
-        _isLoading = false;
-      });
+      final data = await _getPrivateStoriesUseCase.execute();
+      if (mounted) {
+        setState(() {
+          _stories = data;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('خطأ في تحميل المكتبة: $e')));
         setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في جلب القصص: $e')),
+        );
       }
     }
+  }
+
+  void _onStoryTap(BuildContext context, Map<String, dynamic> savedStory) {
+    final dynamic rawScenes = savedStory['scenes_json'];
+    
+    List<dynamic> parsedScenes = [];
+    if (rawScenes is List) {
+      parsedScenes = rawScenes;
+    } else if (rawScenes is String) {
+      try {
+        parsedScenes = jsonDecode(rawScenes) as List<dynamic>;
+      } catch (e) {
+        debugPrint('[Library] خطأ في فك تشفير المشاهد: $e');
+      }
+    }
+
+    if (parsedScenes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('عذراً، لا توجد مشاهد محفوظة لهذه القصة.')),
+      );
+      return;
+    }
+
+    final Map<String, dynamic> storyData = {
+      'title': savedStory['title'] ?? 'قصة محفوظة',
+      'scenes': parsedScenes,
+      'coverImage': savedStory['cover_image'] ?? '',
+      'id': savedStory['id'],
+    };
+
+    GoRouter.of(context).push(
+      '/cinema',
+      extra: {
+        'storyData': storyData,
+        'voice': savedStory['voice_type'] ?? 'nova', 
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('مكتبتي الخاصة'),
-        leading: Icon(Icons.lock, color: AppColors.secondary), // Golden lock
-      ),
+      appBar: AppBar(title: const Text('مكتبتي الخاصة')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _stories.isEmpty
-          ? const Center(child: Text('لم تصنع أي قصص بعد. ابدأ المغامرة!'))
-          : ListView.builder(
+          ? const Center(child: Text('لم تصنع أي قصص بعد. ابدأ رحلتك الآن!'))
+          : GridView.builder(
               padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.75,
+              ),
               itemCount: _stories.length,
               itemBuilder: (context, index) {
                 final story = _stories[index];
-                return Card(
-                  color: AppColors.primary.withValues(alpha: 0.2),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: ListTile(
-                    leading: Icon(Icons.menu_book, color: AppColors.secondary),
-                    title: Text(
-                      story['title'] ?? 'قصة بدون عنوان',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      story['created_at'].toString().split('T')[0],
-                    ),
-                    trailing: Icon(
-                      Icons.play_circle_fill,
-                      color: AppColors.primary,
-                    ),
-                    onTap: () {
-                      // Open in CinemaScreen (passing story data to be played)
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'سيتم تشغيل القصة في شاشة السينما قريباً',
+                return InkWell(
+                  onTap: () => _onStoryTap(context, story),
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: story['cover_image'] != null && story['cover_image'].toString().isNotEmpty
+                              ? Image.network(story['cover_image'], fit: BoxFit.cover, errorBuilder: (c,e,s) => const Icon(Icons.menu_book, size: 50))
+                              : const Icon(Icons.menu_book, size: 50),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            story['title'] ?? 'قصة مجهولة',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
                           ),
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   ),
                 );
               },

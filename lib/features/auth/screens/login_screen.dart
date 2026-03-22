@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hikayati/application/use_cases/auth_use_cases.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +16,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoginMode = true;
   bool _rememberMe = true;
 
+  final _authUseCases = AuthUseCases();
+
   Future<void> _submit() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -29,16 +31,16 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       if (_isLoginMode) {
         // تسجيل الدخول
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
+        await _authUseCases.signInEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
         );
         if (mounted) context.go('/');
       } else {
         // إنشاء حساب جديد
-        await Supabase.instance.client.auth.signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
+        await _authUseCases.signUpEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -47,16 +49,10 @@ class _LoginScreenState extends State<LoginScreen> {
           context.go('/');
         }
       }
-    } on AuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: ${e.message}')),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ غير متوقع: $e')),
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
         );
       }
     } finally {
@@ -72,9 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(
-        _emailController.text.trim(),
-      );
+      await _authUseCases.resetPassword(_emailController.text.trim());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني')),
@@ -83,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في استعادة كلمة المرور: $e')),
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
         );
       }
     }

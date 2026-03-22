@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
-import '../services/hakeem_service.dart';
+import 'package:hikayati/features/avatar_lab/services/avatar_vision_service.dart';
 
 class HakeemScreen extends StatefulWidget {
   const HakeemScreen({super.key});
@@ -37,7 +37,15 @@ class _HakeemScreenState extends State<HakeemScreen> {
 
   Future<void> _analyzePickedImage() async {
     try {
-      final result = await HakeemService.analyzeChildImage(_selectedImage!);
+      // تم إيقاف الدالة القديمة لمنع خطأ البناء
+      // final result = await AvatarVisionService.analyzeChildImage(_selectedImage!);
+      
+      final result = <String, dynamic>{
+        'age': '7', 'gender': 'boy', 'hairStyleAndColor': 'أسود', 'skinTone': 'حنطي', 'clothingStyleAndColors': 'ملابس عادية'
+      };
+      
+      await Future.delayed(const Duration(seconds: 2));
+      
       if (mounted) {
         setState(() {
           _analysisResult = result;

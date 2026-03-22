@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -38,6 +39,31 @@ class SupabaseService {
         throw Exception('رصيدك غير كافٍ. يرجى زيارة المتجر لشحن الرصيد.');
       }
       throw Exception('فشلت عملية الخصم: $e');
+    }
+  }
+  /// يتحقق من وجود صف للمستخدم في جدول profiles.
+  /// إذا لم يكن موجوداً يُنشئه تلقائياً (يمنع خطأ stories_user_id_fkey).
+  static Future<void> ensureProfileExists(String userId) async {
+    try {
+      final existing = await client
+          .from('profiles')
+          .select('user_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (existing == null) {
+        await client.from('profiles').insert({
+          'user_id': userId,
+          'credits': 100,
+          'language': 'ar',
+        });
+        debugPrint('[SupabaseService] ✅ تم إنشاء Profile جديد للمستخدم: $userId');
+      } else {
+        debugPrint('[SupabaseService] Profile موجود مسبقاً — لا حاجة للإنشاء.');
+      }
+    } catch (e) {
+      // لا نرمي الخطأ — نستمر في الحفظ ونسمح لـ FK يحسم الوضع
+      debugPrint('[SupabaseService] ⚠️ خطأ في ensureProfileExists: $e');
     }
   }
 }

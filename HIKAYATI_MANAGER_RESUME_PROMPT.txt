@@ -1,0 +1,38 @@
+اقرأ أولاً وبالترتيب الإلزامي:
+1) HIKAYATI_AGENT_MASTER_SPEC.md
+2) HIKAYATI_ORCHESTRATOR_PROTOCOL.md
+3) PROJECT_STATUS.md
+4) SESSION_HANDOFF.md
+5) TASK_BACKLOG.md
+6) DECISIONS_LOG.md
+7) stabilization_report.md
+
+ثم نفّذ فوراً كمدير للوكلاء:
+
+- لا تطلب مني إعادة شرح المشروع.
+- استخرج المرحلة الحالية والحالة الحالية من الملفات.
+- حدّد آخر مهمة مكتملة وآخر نقطة توقف.
+- أنشئ أو حدّث خطة التنفيذ الحالية.
+- قسّم العمل على الوكلاء بمهمات صغيرة واضحة وقابلة للاختبار.
+- اجعل كل وكيل يلتزم بملفات محددة فقط.
+- لا تسمح بأي توسع جديد قبل إنهاء Phase A.
+
+اعتبر المشاكل التالية blockers رسمية يجب حلها أولاً:
+1) Hakeem chat model misconfiguration (`gemini-pro` not found)
+2) Supabase schema mismatch for `stories.cover_image`
+3) cinematic performance / skipped frames
+4) Android back callback manifest warning
+
+المخرجات المطلوبة منك الآن قبل أي تعديل:
+A) Current Phase
+B) Last Completed Task
+C) Active Blockers
+D) Worker Assignments
+E) Verification Plan
+
+بعدها ابدأ التنفيذ مباشرة، وسجّل كل شيء في:
+- PROJECT_STATUS.md
+- TASK_BACKLOG.md
+- SESSION_HANDOFF.md
+- DECISIONS_LOG.md
+- TEST_CHECKLIST.md

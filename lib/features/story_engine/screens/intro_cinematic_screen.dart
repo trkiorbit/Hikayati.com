@@ -1,20 +1,21 @@
 /// === IntroCinematicScreen ===
-/// شاشة المقدمة المدمجة مع التوليد
+/// شاشة المقدمة والتحميل — (UI فقط)
 ///
-/// المهام المتوازية في هذه الشاشة:
-/// 1. تشغيل فيديو المقدمة (الشارة) - يمكن تغييره في أي وقت
-/// 2. توليد القصة في الخلفية عبر UnifiedEngine
-/// 3. عند اكتمال التوليد → تُقطع المقدمة وتبدأ السينما
+/// مسؤولية هذه الشاشة:
+/// 1. عرض تجربة تحميل بصرية وصوتية أثناء انتظار التوليد
+/// 2. تشغيل صوت المقدمة
+/// 3. استلام النتيجة من GenerateStoryUseCase والانتقال إلى CinemaScreen
 ///
-/// المقدمة هي ملف محلي: assets/videos/intro_video.mp4
-/// يمكن استبداله بأي فيديو في أي وقت دون تعديل الكود
+/// ما لا يجوز لهذه الشاشة فعله (LAW 1 — HIKAYATI_AGENT_MASTER_SPEC.md):
+/// - استدعاء UnifiedEngine مباشرة
+/// - احتواء منطق توليد القصة
 
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
-import 'package:hikayati/features/story_engine/services/unified_engine.dart';
+import 'package:hikayati/application/use_cases/generate_story_use_case.dart';
 
 class IntroCinematicScreen extends StatefulWidget {
   /// بيانات الطلب لتوليد القصة (اسم البطل، عمره، الأسلوب...)
@@ -111,16 +112,19 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
   // تم إزالة ملف الفيديو بناء على طلب المستخدم ليكتفى بـ الصوت
 
   // ===================================================
-  // 2. توليد القصة في الخلفية
+  // 2. تفويض توليد القصة إلى الـ Use Case (LAW 1)
+  // لا يوجد هنا أي منطق توليد — الشاشة تستقبل النتيجة فقط
   // ===================================================
+  final _generateStoryUseCase = GenerateStoryUseCase();
+
   Future<void> _generateStoryInBackground() async {
     try {
-      debugPrint('[Intro] بدء توليد القصة في الخلفية...');
-      final storyData = await UnifiedEngine.generateStory(widget.requestData);
+      debugPrint('[Intro] تفويض التوليد إلى GenerateStoryUseCase...');
+      final storyData = await _generateStoryUseCase.execute(widget.requestData, voice: widget.voice);
 
       if (!mounted) return;
 
-      // التحقق من وجود خطأ في بيانات القصة
+      // التحقق من وجود مشاهد في النتيجة
       final scenes = storyData['scenes'] as List?;
       if (scenes == null || scenes.isEmpty) {
         _generationError = 'لم يتم توليد مشاهد. يرجى المحاولة مجدداً.';
@@ -128,16 +132,35 @@ class _IntroCinematicScreenState extends State<IntroCinematicScreen> {
         return;
       }
 
-      // لا نستخدم future.delayed هنا بعد الآن، ننتظر انتهاء الصوت عبر isAudioFinished
-      
       if (!mounted) return;
 
-      debugPrint('[Intro] اكتمل التوليد.');
+      debugPrint('[Intro] استلمت النتيجة من UseCase — عدد المشاهد: ${scenes.length}');
+      
+      // [PERF] Precache images to prevent frame skips in CinemaScreen
+      if (mounted) {
+        try {
+          // Precache cover image
+          final cover = storyData['cover_url'] ?? storyData['cover_image'] ?? storyData['coverImageUrl'];
+          if (cover != null && cover.toString().isNotEmpty) {
+            precacheImage(NetworkImage(cover), context);
+          }
+          // Precache scenes
+          for (final scene in scenes) {
+            final url = scene['imageUrl'] ?? scene['image_url'];
+            if (url != null && url.toString().isNotEmpty) {
+              precacheImage(NetworkImage(url), context);
+            }
+          }
+        } catch (e) {
+          debugPrint('[Intro] Precache ignore error: $e');
+        }
+      }
+
       _generatedStoryData = storyData;
       setState(() => _isGenerationFinished = true);
       _checkAndNavigate();
     } catch (e) {
-      debugPrint('[Intro] خطأ في التوليد: $e');
+      debugPrint('[Intro] خطأ: $e');
       _generationError = 'حدث خطأ: ${e.toString()}';
       if (mounted) _navigateOnError();
     }

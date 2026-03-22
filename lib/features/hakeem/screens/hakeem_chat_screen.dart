@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
 import '../services/hakeem_service.dart';
 
@@ -101,9 +102,9 @@ class _HakeemChatScreenState extends State<HakeemChatScreen> {
                 alignment: WrapAlignment.start,
                 children: [
                   ActionChip(
-                    label: const Text('صنع الأفاتار', style: TextStyle(color: AppColors.deepBlack, fontWeight: FontWeight.bold)),
+                    label: const Text('اصنع بطلك', style: TextStyle(color: AppColors.deepBlack, fontWeight: FontWeight.bold)),
                     backgroundColor: AppColors.secondary,
-                    onPressed: () => Navigator.pushNamed(context, '/create-avatar'),
+                    onPressed: () => context.push('/avatar-lab'),
                   ),
                   ..._quickActions.map((action) => ActionChip(
                     label: Text(action['title']!, style: const TextStyle(color: Colors.white)),
