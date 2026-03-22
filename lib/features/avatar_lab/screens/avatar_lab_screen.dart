@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hikayati/features/avatar_lab/services/avatar_vision_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/network/supabase_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AvatarLabScreen extends StatefulWidget {
   const AvatarLabScreen({super.key});
@@ -17,6 +19,7 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
   List<Map<String, dynamic>> _generatedOptions = [];
+  Map<String, dynamic>? _analyzedData;
   Map<String, dynamic>? _currentAvatar;
   final TextEditingController _clothesController = TextEditingController();
 
@@ -30,6 +33,13 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) return;
+      
+      // Destroy local cache forcefully on init check
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey('saved_avatar')) {
+        await prefs.remove('saved_avatar');
+      }
+
       final response = await Supabase.instance.client.from('profiles').select('avatar_profile_summary').eq('user_id', userId).single();
       if (response['avatar_profile_summary'] != null && mounted) {
         setState(() => _currentAvatar = response['avatar_profile_summary']);
@@ -45,11 +55,12 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
       setState(() {
         _selectedImage = File(image.path);
         _generatedOptions = []; // تصفير الخيارات السابقة
+        _analyzedData = null; // تصفير البيانات المحللة السابقة
       });
     }
   }
 
-  Future<void> _generateFromImage() async {
+  Future<void> _analyzeImage() async {
     if (_selectedImage == null) return;
     
     setState(() => _isLoading = true);
@@ -66,12 +77,32 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
       }
       final String uploadedImageUrl = Supabase.instance.client.storage.from('avatars').getPublicUrl(fileName);
 
-      // 2. إرسال الرابط للتحليل والتوليد الآلي عبر Pollinations
-      final options = await AvatarVisionService.analyzeAndGenerateOptions(uploadedImageUrl);
+      // 2. إرسال الرابط للتحليل فقط واستخراج الوصف لمراجعته
+      final analyzedData = await AvatarVisionService.analyzeImage(uploadedImageUrl);
 
+      setState(() {
+        _analyzedData = analyzedData;
+      });
+    } catch (e) {
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      }
+    } finally {
+      if(mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _proceedToGenerate() async {
+    if (_analyzedData == null) return;
+    setState(() => _isLoading = true);
+    try {
+      final options = await AvatarVisionService.generateOptionsFromData(_analyzedData!);
       setState(() {
         _generatedOptions = options;
       });
+      if (options.isEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل توليد الصور، يرجى المحاولة مرة أخرى.')));
+      }
     } catch (e) {
       if(mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
@@ -114,6 +145,39 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteAvatar() async {
+    setState(() => _isLoading = true);
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // حذف بيانات البطل فعلياً من قاعدة البيانات
+      await Supabase.instance.client.from('profiles').update({
+        'avatar_profile_summary': null,
+      }).eq('user_id', userId);
+
+      // تدمير الكاش المحلي لضمان النظافة
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_avatar');
+
+      if (mounted) {
+        setState(() {
+          _currentAvatar = null;
+          _generatedOptions = [];
+          _selectedImage = null;
+        _analyzedData = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم حذف البطل السابق. يمكنك الآن صنع بطل جديد!')),
+        );
+      }
+    } catch (e) {
+      debugPrint('[AvatarLab] Error deleting avatar: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -175,6 +239,37 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
     );
   }
 
+  Widget _buildPromptBox(String title, String text) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[800],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[600]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
+              IconButton(
+                icon: const Icon(Icons.copy, size: 20, color: Colors.blueAccent),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: text));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم النسخ!')));
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SelectableText(text, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -211,9 +306,32 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
               ),
               const Divider(height: 40),
               TextButton(
-                onPressed: () => setState(() => _currentAvatar = null),
-                child: const Text('أريد صنع بطل جديد كلياً (20 جوهرة)', style: TextStyle(color: Colors.redAccent)),
+                onPressed: _isLoading ? null : _deleteAvatar,
+                child: const Text('حذف البطل والبدء من جديد', style: TextStyle(color: Colors.redAccent)),
               ),
+        ] else if (_analyzedData != null && _generatedOptions.isEmpty) ...[
+          const Text('مراجعة الوصف البصري للبطل', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          const Text('سيتم إرسال هذا الوصف لمولد الصور. يمكنك نسخه للرجوع إليه.', style: TextStyle(color: Colors.grey, fontSize: 14)),
+          const SizedBox(height: 20),
+          _buildPromptBox('الوصف باللغة الإنجليزية (الفعلي)', _analyzedData!['english_prompt'] ?? ''),
+          const SizedBox(height: 15),
+          _buildPromptBox('الترجمة العربية', _analyzedData!['arabic_prompt'] ?? ''),
+          const SizedBox(height: 30),
+          ElevatedButton.icon(
+            onPressed: _isLoading ? null : _proceedToGenerate,
+            icon: const Icon(Icons.check),
+            label: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('موافق، ابدأ التوليد 🚀'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 50),
+              backgroundColor: Colors.green,
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () => setState(() { _analyzedData = null; _selectedImage = null; }),
+            child: const Text('إلغاء واختيار صورة أخرى', style: TextStyle(color: Colors.redAccent)),
+          ),
             ] else if (_generatedOptions.isEmpty) ...[
               // منطقة رفع الصورة
               GestureDetector(
@@ -247,14 +365,14 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
               const SizedBox(height: 20),
               if (_selectedImage != null)
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _generateFromImage,
+              onPressed: _isLoading ? null : _analyzeImage,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: Colors.purple,
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('تحليل الصورة وإنشاء البطل 🚀'),
+                  : const Text('تحليل الصورة واستخراج الوصف 🔍'),
                 ),
             ] else ...[
               // عرض الخيارات

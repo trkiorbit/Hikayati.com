@@ -44,34 +44,48 @@ class GenerateStoryUseCase {
     if (requestData['useAvatar'] == true) totalCost += 10;
     if (voice == 'cloned') totalCost += 10;
 
-    // خصم الكريدت أولاً
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) throw Exception('يجب تسجيل الدخول أولاً.');
+
+    // جلب الرصيد الفوري المباشر من قاعدة البيانات للتأكد من عدم وجود كاش وهمي
+    final profileRes = await Supabase.instance.client.from('profiles').select('credits').eq('user_id', userId).single();
+    final currentCredits = profileRes['credits'] as int? ?? 0;
+    
+    if (currentCredits < totalCost) {
+      throw Exception('الرصيد الفعلي غير كافٍ. تمتلك $currentCredits وتحتاج إلى $totalCost جواهر لتوليد هذه القصة.');
+    }
+
+    // خصم الكريدت الفعلي
     try {
       await SupabaseService.deductCredits(totalCost, 'توليد قصة سينمائية');
     } catch (e) {
-      throw Exception('الرصيد غير كافٍ. تحتاج إلى $totalCost جواهر لتوليد هذه القصة.');
+      throw Exception('فشلت عملية الخصم الداخلي: $e');
     }
     
     // جلب الأفاتار المخزن إذا طلبه المستخدم بوضع useAvatar = true
     if (requestData['useAvatar'] == true) {
+      debugPrint('[AvatarFetch] start');
       try {
-        final userId = Supabase.instance.client.auth.currentUser?.id;
-        final profileRes = await Supabase.instance.client.from('profiles').select('avatar_profile_summary').eq('user_id', userId as Object).single();
-        final avatarData = profileRes['avatar_profile_summary'];
+        final avatarProfileRes = await Supabase.instance.client.from('profiles').select('avatar_profile_summary').eq('user_id', userId).single();
+        final avatarData = avatarProfileRes['avatar_profile_summary'];
         
         if (avatarData != null) {
-          debugPrint('[UseCase] تم العثور على أفاتار محفوظ، سيتم دمج بصمته في القصة.');
+          debugPrint('[AvatarFetch] found avatar_profile_summary');
           
-          final desc = 'Gender: ${avatarData['gender']}, Hair: ${avatarData['hairStyleAndColor']}, Skin: ${avatarData['skinTone']}, Clothing: ${avatarData['clothingStyleAndColors']}';
-          requestData['heroVisualDescription'] = desc;
+          final face = avatarData['face_description'] ?? 'وجه طفل';
+          final clothes = avatarData['current_clothes'] ?? 'ملابس عادية';
+          requestData['heroVisualDescription'] = 'الملامح: $face, يرتدي: $clothes';
           requestData['avatarData'] = avatarData; // حفظ الهوية الكاملة ليمررها الـ Prompt Builder
           
           if (avatarData['name'] != null) requestData['heroName'] = avatarData['name'];
           if (avatarData['age'] != null) requestData['heroAge'] = avatarData['age'].toString();
         } else {
+          debugPrint('[AvatarFetch] null -> disable avatar');
           requestData['useAvatar'] = false; // إلغاء التفعيل إن لم يجد أفاتار بالخطأ
         }
       } catch (e) {
-        debugPrint('[UseCase] تحذير: فشل جلب الأفاتار: $e');
+        debugPrint('[AvatarFetch] error -> disable avatar');
+        requestData['useAvatar'] = false;
       }
     }
 

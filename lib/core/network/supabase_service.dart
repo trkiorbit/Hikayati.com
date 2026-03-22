@@ -33,7 +33,8 @@ class SupabaseService {
         'p_amount': amount,
         'p_reason': reason,
       });
-      return response['success'] == true;
+      // الدالة في قاعدة البيانات ترجع boolean مباشرة وليس Map
+      return response == true;
     } catch (e) {
       if (e.toString().contains('Insufficient credits')) {
         throw Exception('رصيدك غير كافٍ. يرجى زيارة المتجر لشحن الرصيد.');

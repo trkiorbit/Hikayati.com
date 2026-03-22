@@ -29,6 +29,11 @@ class AudioService {
       if (_isDisposed || audioUrl.isEmpty) return;
       
       await _audioPlayer.play(UrlSource(audioUrl));
+      
+      // الانتظار حتى يكتمل المقطع الصوتي تماماً (لضمان التسلسل في السينما)
+      if (!_isDisposed) {
+        await _audioPlayer.onPlayerComplete.first;
+      }
     } catch (e) {
       debugPrint('[AudioService] خطأ في تشغيل الصوت: $e');
     }
@@ -45,13 +50,14 @@ class AudioService {
   }
 
   /// التخلص من المشغل وإغلاقه بشكل نهائي يمنع الانهيارات
-  void dispose() {
+  Future<void> dispose() async {
+    if (_isDisposed) return;
     _isDisposed = true;
     try {
-      _audioPlayer.stop();
-      _audioPlayer.dispose();
+      await _audioPlayer.stop();
+      await _audioPlayer.dispose();
     } catch (e) {
-      debugPrint('[AudioService] تجاهل خطأ الـ Dispose: $e');
+      debugPrint('Dispose handled: $e');
     }
   }
 }

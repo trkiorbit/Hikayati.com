@@ -14,36 +14,49 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
+    final userId = user?.id ?? '';
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      // 1. شريط علوي
-      appBar: AppBar(
-        title: const Text('حكواتي', style: TextStyle(fontWeight: FontWeight.bold, color: warmGold)),
-        backgroundColor: deepBlack,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              children: [
-                const Text('100', style: TextStyle(color: warmGold, fontWeight: FontWeight.bold, fontSize: 18)),
-                const SizedBox(width: 4),
-                const Icon(Icons.stars, color: warmGold, size: 28),
-              ],
-            ),
+    final creditsStream = Supabase.instance.client
+        .from('profiles')
+        .stream(primaryKey: ['user_id'])
+        .eq('user_id', userId)
+        .map((maps) => maps.isNotEmpty ? (maps.first['credits'] as int? ?? 0) : 0);
+
+    return StreamBuilder<int>(
+      stream: creditsStream,
+      initialData: 0,
+      builder: (context, snapshot) {
+        final credits = snapshot.data ?? 0;
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          // 1. شريط علوي
+          appBar: AppBar(
+            title: const Text('حكواتي', style: TextStyle(fontWeight: FontWeight.bold, color: warmGold)),
+            backgroundColor: deepBlack,
+            foregroundColor: Colors.white,
+            centerTitle: true,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Text(credits.toString(), style: const TextStyle(color: warmGold, fontWeight: FontWeight.bold, fontSize: 18)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.stars, color: warmGold, size: 28),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      // 7. روابط الحساب والسياسات (القائمة الجانبية)
-      drawer: _buildDrawer(context, user),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 2. بانر رئيسي
-            _buildMainBanner(context),
+          // 7. روابط الحساب والسياسات (القائمة الجانبية)
+          drawer: _buildDrawer(context, user, credits),
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 2. بانر رئيسي
+                _buildMainBanner(context, credits),
             
             const SizedBox(height: 20),
             
@@ -78,11 +91,12 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
     );
+  });
   }
 
   // --- بناء أجزاء الشاشة حسب الدستور ---
 
-  Widget _buildDrawer(BuildContext context, User? user) {
+  Widget _buildDrawer(BuildContext context, User? user, int credits) {
     return Drawer(
       backgroundColor: Colors.white,
       child: ListView(
@@ -101,7 +115,7 @@ class HomeScreen extends StatelessWidget {
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 const SizedBox(height: 5),
-                const Text('الرصيد: 100 كريدت', style: TextStyle(color: warmGold, fontWeight: FontWeight.bold)),
+                Text('الرصيد: $credits كريدت', style: const TextStyle(color: warmGold, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -157,7 +171,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMainBanner(BuildContext context) {
+  Widget _buildMainBanner(BuildContext context, int credits) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Container(
@@ -194,7 +208,7 @@ class HomeScreen extends StatelessWidget {
                 _buildMiniIconButton(Icons.person, () => _showTopSnackBar(context, 'صفحة الملف الشخصي')),
                 _buildMiniIconButton(Icons.face, () => context.push('/avatar-lab')),
                 _buildMiniIconButton(Icons.mic, () => context.push('/voice-clone')),
-                _buildMiniIconButton(Icons.account_balance_wallet, () => _showTopSnackBar(context, 'إعادة الشحن (الكريدت الحالي: 100)')),
+                _buildMiniIconButton(Icons.account_balance_wallet, () => _showTopSnackBar(context, 'إعادة الشحن (الكريدت الحالي: $credits)')),
                 _buildMiniIconButton(Icons.store, () => _showTopSnackBar(context, 'متجر حكواتي')),
               ],
             ),

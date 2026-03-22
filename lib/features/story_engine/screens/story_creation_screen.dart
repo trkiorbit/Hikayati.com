@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
 
 class StoryCreationScreen extends StatefulWidget {
@@ -32,10 +33,21 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   Future<void> _loadSavedData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // تحميل الأفاتار المحفوظ
-    final avatarJson = prefs.getString('saved_avatar');
-    if (avatarJson != null && mounted) {
-      setState(() => _savedAvatar = jsonDecode(avatarJson));
+    // جلب الأفاتار من قاعدة البيانات (Supabase) لضمان التحديث اللحظي
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        final response = await Supabase.instance.client
+            .from('profiles')
+            .select('avatar_profile_summary')
+            .eq('user_id', userId)
+            .single();
+        if (response['avatar_profile_summary'] != null && mounted) {
+          setState(() => _savedAvatar = response['avatar_profile_summary']);
+        }
+      }
+    } catch (e) {
+      debugPrint('[StoryCreation] لم يتم العثور على بطل محفوظ: $e');
     }
 
     // تحميل الصوت المستنسخ
@@ -223,7 +235,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                 children: [
                   Text(
                     hasAvatar
-                        ? 'بطل القصة: ${_savedAvatar!['name'] ?? 'بطلي'}'
+                        ? 'البطل السحري جاهز!'
                         : 'اضغط لصناعة بطلك',
                     style: TextStyle(
                       fontSize: 16,

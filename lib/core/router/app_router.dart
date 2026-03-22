@@ -17,7 +17,8 @@ import '../../features/voice_clone/screens/voice_clone_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/app-intro',
+    // تعطيل مؤقت لفيديو البداية (استبدل '/' بـ '/app-intro' لإعادته)
+    initialLocation: '/',
     redirect: (context, state) {
       final session = Supabase.instance.client.auth.currentSession;
       final isAuth = session != null;

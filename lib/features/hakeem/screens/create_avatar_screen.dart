@@ -39,13 +39,8 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
 
   Future<void> _analyzePickedImage() async {
     try {
-      // تم إيقاف استخدام الدالة القديمة لأن حكيم لا يتدخل في توليد الأفاتار حسب الدستور
-      // final result = await AvatarVisionService.analyzeChildImage(_selectedImage!);
-      
-      // بيانات وهمية مؤقتة لمنع انهيار التطبيق حتى يتم تحديث دور حكيم مستقبلاً
-      final result = <String, dynamic>{
-        'age': '7', 'gender': 'boy', 'hairStyleAndColor': 'أسود', 'skinTone': 'حنطي', 'clothingStyleAndColors': 'ملابس عادية'
-      };
+      // [CLEANUP] تم إزالة مسار تحليل الأفاتار الوهمي من حكيم لفك التعارض
+      final result = <String, dynamic>{'status': 'تم توجيه الأفاتار للمختبر الرئيسي'};
       
       await Future.delayed(const Duration(seconds: 2)); // محاكاة وقت التحليل
 
@@ -145,26 +140,16 @@ class _CreateAvatarScreenState extends State<CreateAvatarScreen> {
               if (_isAnalyzing) ...[
                 const Center(child: CircularProgressIndicator()),
                 const SizedBox(height: 12),
-                const Text('حكيم يحلل الملامح الدقيقة للصورة...', textAlign: TextAlign.center),
+                const Text('جاري المعالجة...', textAlign: TextAlign.center),
               ] else if (_analysisResult != null) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green),
+                    border: Border.all(color: Colors.blue),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('✅ تم استخراج الجينات البصرية للبطل:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                      const SizedBox(height: 8),
-                      Text('• العمر: ${_analysisResult!['age']} | الجنس: ${_analysisResult!['gender']}'),
-                      Text('• الشعر: ${_analysisResult!['hairStyleAndColor']}'),
-                      Text('• البشرة: ${_analysisResult!['skinTone']}'),
-                      Text('• الملابس: ${_analysisResult!['clothingStyleAndColors']}'),
-                    ],
-                  ),
+                  child: const Text('⚠️ صناعة الأفاتار تتم الآن عبر "اصنع بطلك" في الصفحة الرئيسية للحصول على نتائج دقيقة.', textAlign: TextAlign.center),
                 ),
                 const SizedBox(height: 24),
                 TextField(

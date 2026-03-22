@@ -113,7 +113,7 @@ class UnifiedEngine {
         return _fallbackStory('حدث خطأ أثناء تحليل القصة: $e');
       }
 
-      debugPrint('[Engine] بدء توليد روابط الصور...');
+      debugPrint('[StoryGen] image generation start');
       final Random random = Random();
       // السر هنا: نستخدم بذرة عشوائية واحدة لكل القصة للحفاظ على النمط والشخصية وعدم تناقض التفاصيل
       final int storySeed = random.nextInt(1000000); 
@@ -144,8 +144,12 @@ class UnifiedEngine {
            safeText = 'مشهد آمن ولطيف.';
         }
 
-        // تنظيف الـ Prompt النهائي من الرموز المعقدة لمنع الخطأ 400
-        final String ultraSafePrompt = safePrompt.replaceAll(RegExp(r'[^\x00-\x7F]+'), '').trim();
+        // تنظيف محافظ للـ Prompt: إزالة الأسطر المتعددة، قص الطول، بدون حذف اللغة العربية
+        String cleanedPrompt = safePrompt.replaceAll(RegExp(r'[\n\r]+'), ' ').trim();
+        if (cleanedPrompt.length > 900) {
+          cleanedPrompt = cleanedPrompt.substring(0, 900);
+        }
+        debugPrint('[PromptSafe] prompt trimmed');
 
         // بناء رابط الصورة باستخدام النطاق وتحديد موديل flux واستخدام نفس (storySeed) لجميع المشاهد
         // إصلاح 401: التأكد من صيغة المفتاح أو إزالته إذا كان فارغاً
@@ -154,19 +158,25 @@ class UnifiedEngine {
         // السلاح السري للاتساق: إضافة الصورة المرجعية إذا كان الأفاتار مفعلاً
         String referenceImageParam = '';
         if (useAvatar && requestData['avatarData'] != null) {
-          final refUrl = requestData['avatarData']['reference_image_url'];
-          if (refUrl != null && refUrl.toString().isNotEmpty) {
-            referenceImageParam = '&image=${Uri.encodeComponent(refUrl)}';
+          // استخراج الرابط مع دعم الحقلين لضمان عدم الكسر
+          final refUrl = requestData['avatarData']['selected_avatar'] ?? requestData['avatarData']['reference_image_url'];
+          final String urlString = refUrl?.toString().trim() ?? '';
+          
+          if (urlString.isNotEmpty && (urlString.startsWith('http://') || urlString.startsWith('https://'))) {
+            debugPrint('[AvatarRef] valid reference image');
+            referenceImageParam = '&image=${Uri.encodeComponent(urlString)}';
+          } else {
+            debugPrint('[AvatarRef] invalid -> fallback without avatar');
           }
         }
         
         final String imageUrl =
-            'https://gen.pollinations.ai/image/${Uri.encodeComponent(ultraSafePrompt)}?model=flux&width=1024&height=512&nologo=true&seed=${storySeed + scenes.length}$keyParam$referenceImageParam';
+            'https://gen.pollinations.ai/image/${Uri.encodeComponent(cleanedPrompt)}?model=flux&width=1024&height=512&nologo=true&seed=${storySeed + scenes.length}$keyParam$referenceImageParam';
             
         scenes.add({'text': safeText, 'imageUrl': imageUrl});
       }
 
-      debugPrint('[Engine] تم توليد المشاهد بنجاح.');
+      debugPrint('[StoryGen] image generation completed');
 
       final String coverImage = scenes.isNotEmpty ? scenes.first['imageUrl'] : '';
       final storyData = {
