@@ -48,7 +48,8 @@ class AppRouter {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final storyData = extra['storyData'] ?? {};
           final voice = extra['voice'] ?? '';
-          return CinemaScreen(storyData: storyData, voice: voice);
+          final fromLibrary = extra['fromLibrary'] as bool? ?? false;
+          return CinemaScreen(storyData: storyData, voice: voice, fromLibrary: fromLibrary);
         },
       ),
       GoRoute(
@@ -68,7 +69,8 @@ class AppRouter {
           // requestData: بيانات الطلب، التوليد يحدث داخل IntroCinematicScreen
           final requestData = extra['requestData'] as Map<String, dynamic>? ?? {};
           final voice = extra['voice'] ?? '';
-          return IntroCinematicScreen(requestData: requestData, voice: voice);
+          final saveToLibrary = extra['saveToLibrary'] as bool? ?? true;
+          return IntroCinematicScreen(requestData: requestData, voice: voice, saveToLibrary: saveToLibrary);
         },
       ),
       GoRoute(

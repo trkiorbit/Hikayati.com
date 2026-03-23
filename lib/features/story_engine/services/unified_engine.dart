@@ -18,6 +18,7 @@ class UnifiedEngine {
   /// تستقبل بيانات البطل وتعيد مشاهد القصة (نص + صورة)
   static Future<Map<String, dynamic>> generateStory(
     Map<String, dynamic> requestData,
+    {bool saveToLibrary = true}
   ) async {
     // جلب مفاتيح Pollinations من ملف البيئة (نص + صور)
     final String textApiKey = dotenv.env['POLLINATIONS_TEXT_API_KEY'] ?? '';
@@ -186,7 +187,8 @@ class UnifiedEngine {
       };
 
       // إجراء الحفظ الفعلي في Supabase
-      try {
+      if (saveToLibrary) {
+        try {
         final userId = Supabase.instance.client.auth.currentUser?.id;
         if (userId != null) {
           // ✅ Batch 2 Fix: ضمان وجود profile قبل حفظ القصة (يمنع خطأ stories_user_id_fkey)
@@ -208,6 +210,7 @@ class UnifiedEngine {
         }
       } catch (dbError) {
         debugPrint('[Engine] ❌ خطأ في حفظ القصة بقاعدة البيانات: $dbError');
+        }
       }
 
       return storyData;

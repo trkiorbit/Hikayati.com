@@ -10,13 +10,13 @@ class TtsService {
   static AudioPlayer? _activePlayer;
 
   static const maleVoice = 'onyx';
-  static const femaleVoice = 'nova';
+  static const femaleVoice = 'shimmer'; // تم استبدال nova بـ shimmer لتجنب التشويش
 
   /// تشغيل صوت وإرجاع Future عند اكتمال التشغيل
   /// [onComplete]: callback يُستدعى بعد انتهاء الصوت
   static Future<void> speakAndWait(
     String text, {
-    String voice = 'nova',
+    String voice = 'alloy',
     VoidCallback? onComplete,
   }) async {
     if (text.trim().isEmpty) {

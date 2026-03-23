@@ -6,12 +6,14 @@ import 'package:hikayati/core/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hikayati/features/story_engine/services/tts_service.dart';
 import 'package:hikayati/features/story_engine/services/elevenlabs_direct_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class CinemaScreen extends StatefulWidget {
   final Map<String, dynamic> storyData;
   final String voice;
+  final bool fromLibrary; // تحديد مصدر الدخول للتوجيه الصحيح
 
-  const CinemaScreen({super.key, required this.storyData, required this.voice});
+  const CinemaScreen({super.key, required this.storyData, required this.voice, this.fromLibrary = false});
 
   @override
   State<CinemaScreen> createState() => _CinemaScreenState();
@@ -114,11 +116,13 @@ class _CinemaScreenState extends State<CinemaScreen>
     if (!mounted) return;
     _textAnimController.forward(from: 0);
 
-    // 4. تشغيل TTS وانتظار اكتماله
-    final text = (_scenes[index] as Map)['text']?.toString() ?? '';
+    // 4. تشغيل الصوت: محفوظ أولاً، ثم TTS كـ fallback
+    final scene = _scenes[index] as Map;
+    final text = scene['text']?.toString() ?? '';
+    final savedAudio = scene['audio_url']?.toString();
     if (text.isNotEmpty) {
       setState(() => _isSpeaking = true);
-      await _speakAndWait(text);
+      await _speakAndWait(text, savedAudioUrl: savedAudio);
       if (!mounted) return;
       setState(() => _isSpeaking = false);
     }
@@ -133,13 +137,34 @@ class _CinemaScreenState extends State<CinemaScreen>
     }
   }
 
-  Future<void> _speakAndWait(String text) async {
+  Future<void> _speakAndWait(String text, {String? savedAudioUrl}) async {
+    // أولوية: استخدم الصوت المحفوظ في Supabase إذا كان موجوداً
+    if (savedAudioUrl != null && savedAudioUrl.isNotEmpty) {
+      debugPrint('[Cinema] 🎵 تشغيل الصوت المحفوظ: $savedAudioUrl');
+      try {
+        final player = AudioPlayer();
+        final completer = Completer<void>();
+        player.onPlayerComplete.listen((_) {
+          if (!completer.isCompleted) completer.complete();
+        });
+        await player.play(UrlSource(savedAudioUrl));
+        await completer.future.timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {},
+        );
+        await player.dispose();
+        return;
+      } catch (e) {
+        debugPrint('[Cinema] ⚠️ فشل تشغيل الصوت المحفوظ، تراجع للـ TTS: $e');
+      }
+    }
+
+    // fallback: توليد TTS إذا لم يكن هناك صوت محفوظ
     final completer = Completer<void>();
     if (_isClonedVoice && _clonedVoiceId.isNotEmpty) {
       await ElevenLabsDirectService.speak(text: text, voiceId: _clonedVoiceId);
     } else {
       final voice = TtsService.resolveVoice(widget.voice);
-      // TTS عبر Pollinations - نستخدم AudioPlayer مع onPlayerComplete
       await TtsService.speakAndWait(text, voice: voice, onComplete: () {
         if (!completer.isCompleted) completer.complete();
       });
@@ -205,9 +230,24 @@ class _CinemaScreenState extends State<CinemaScreen>
   @override
   Widget build(BuildContext context) {
     if (_scenes.isEmpty) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: Text('لا توجد مشاهد', style: TextStyle(color: Colors.white))),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white54, size: 48),
+              const SizedBox(height: 16),
+              const Text('لا توجد مشاهد', style: TextStyle(color: Colors.white70, fontSize: 16)),
+              const SizedBox(height: 24),
+              TextButton.icon(
+                onPressed: () => context.go('/library/private'),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                label: const Text('العودة للمكتبة', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -218,10 +258,15 @@ class _CinemaScreenState extends State<CinemaScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white70),
-          onPressed: () { 
-            _stopAllAudio(); 
+          onPressed: () {
+            _stopAllAudio();
             _bufferTimer?.cancel();
-            context.go('/home'); 
+            // إذا جاء من المكتبة → ارجع للمكتبة، وإلا → الرئيسية
+            if (widget.fromLibrary || Navigator.of(context).canPop()) {
+              context.go('/library/private');
+            } else {
+              context.go('/');
+            }
           },
         ),
         title: Row(

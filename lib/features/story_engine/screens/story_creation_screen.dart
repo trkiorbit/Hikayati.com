@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/features/library/services/library_service.dart';
 
 class StoryCreationScreen extends StatefulWidget {
   const StoryCreationScreen({super.key});
@@ -24,10 +25,26 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   String _selectedStyle = '3d-model';
   String _selectedVoice = 'alloy'; // خيار الراوي الافتراضي
 
+  final _libraryService = LibraryService();
+  bool _isLoadingLimit = true;
+  bool _isLimitReached = false;
+  bool _saveToLibrary = true;
+
   @override
   void initState() {
     super.initState();
     _loadSavedData();
+    _checkStoryLimit();
+  }
+
+  Future<void> _checkStoryLimit() async {
+    final count = await _libraryService.getStoryCount();
+    if (mounted) {
+      setState(() {
+        _isLimitReached = count >= 10;
+        _isLoadingLimit = false;
+      });
+    }
   }
 
   Future<void> _loadSavedData() async {
@@ -86,7 +103,11 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
     if (mounted) {
       context.push(
         '/intro-cinematic',
-        extra: {'requestData': requestData, 'voice': voiceChoice},
+        extra: {
+          'requestData': requestData, 
+          'voice': voiceChoice,
+          'saveToLibrary': _saveToLibrary
+        },
       );
     }
   }
@@ -114,9 +135,15 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+      body: Stack(
+        children: [
+          IgnorePointer(
+            ignoring: _isLimitReached || _isLoadingLimit,
+            child: Opacity(
+              opacity: (_isLimitReached || _isLoadingLimit) ? 0.3 : 1.0,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ── 1) اسم البطل والعمر ──
@@ -159,9 +186,10 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
               icon: Icons.palette_outlined,
               value: _selectedStyle,
               items: const {
-                '3d-model': 'رسوم متحركة 3D (بيكسار)',
+                '3d-model': 'رسوم متحركة 3D  (بيكسار)',
                 'anime': 'أنمي ياباني',
-                'water-color': 'ألوان مائية (كلاسيكي)',
+                'digital-art': 'فن رقمي',
+                'pixel-art': 'بيكسل آرت',
               },
               onChanged: (v) => setState(() => _selectedStyle = v!),
             ),
@@ -186,6 +214,90 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
             ),
           ],
         ),
+      ),
+            ),
+          ),
+          if (_isLoadingLimit)
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          if (_isLimitReached && !_isLoadingLimit)
+            Container(
+              color: Colors.black.withOpacity(0.6),
+              alignment: Alignment.center,
+              child: _buildLimitOverlay(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLimitOverlay() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C2333),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.secondary, width: 2),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 60),
+          const SizedBox(height: 16),
+          const Text(
+            'وصلت للحد الأقصى!',
+            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'مكتبتك الخاصة ممتلئة (10 قصص). لا يمكنك حفظ قصة جديدة إلا باستبدال قصة قديمة، أو يمكنك الاستمرار في توليد المشاهدة فقط دون حفظ.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                setState(() {
+                  _isLimitReached = false;
+                  _saveToLibrary = true;
+                });
+              },
+              child: const Text('متابعة لاستبدال قصة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.redAccent),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                setState(() {
+                  _isLimitReached = false;
+                  _saveToLibrary = false;
+                });
+              },
+              child: const Text('توليد للمشاهدة فقط (بدون حفظ)', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text('إلغاء والعودة', style: TextStyle(color: Colors.white54, fontSize: 16)),
+          ),
+        ],
       ),
     );
   }
@@ -290,7 +402,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                 value: _selectedVoice,
                 items: const {
                   'alloy': 'راوي (متوازن)',
-                  'nova': 'راوية (لطيفة)',
+                  'shimmer': 'راوية (ناعمة)',
                   'onyx': 'راوي (عميق)',
                 },
                 onChanged: (v) => setState(() => _selectedVoice = v!),
