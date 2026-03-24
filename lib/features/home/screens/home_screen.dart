@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/application/use_cases/get_private_stories_use_case.dart';
+import 'package:hikayati/application/use_cases/get_public_stories_use_case.dart';
+import 'dart:convert';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -62,7 +64,7 @@ class HomeScreen extends StatelessWidget {
             
             // 3. قسم القصص العامة
             _buildSectionTitle('المكتبة العامة', () => context.push('/public-library')),
-            _buildHorizontalStoryList(),
+            _buildPublicLibraryHorizontalList(),
             
             const SizedBox(height: 20),
             
@@ -365,36 +367,117 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHorizontalStoryList({bool isFeatured = false}) {
-    return SizedBox(
-      height: 180,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-        itemCount: 5,
-        itemBuilder: (context, index) {
+  Widget _buildPublicLibraryHorizontalList() {
+    return FutureBuilder<List<dynamic>>(
+      future: GetPublicStoriesUseCase().execute(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 180,
+            child: Center(child: CircularProgressIndicator(color: primaryPurple)),
+          );
+        }
+        if (snapshot.hasError) {
+          return const SizedBox(
+            height: 180,
+            child: Center(child: Text('حدث خطأ في جلب القصص')),
+          );
+        }
+        
+        final stories = snapshot.data ?? [];
+        if (stories.isEmpty) {
           return Container(
-            width: 130,
-            margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            height: 120,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: isFeatured ? warmGold.withOpacity(0.2) : Colors.grey[200],
+              color: Colors.grey[200],
               borderRadius: BorderRadius.circular(12),
-              border: isFeatured ? Border.all(color: warmGold, width: 2) : null,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.menu_book, size: 50, color: isFeatured ? primaryPurple : Colors.grey),
-                const SizedBox(height: 10),
-                Text('قصة ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                if (!isFeatured) const Text('10 كريدت', style: TextStyle(color: primaryPurple, fontSize: 12)),
-              ],
+            child: const Center(
+              child: Text(
+                'المكتبة العامة فارغة حالياً.',
+                style: TextStyle(color: deepBlack, fontWeight: FontWeight.bold),
+              ),
             ),
           );
-        },
-      ),
+        }
+
+        return SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            itemCount: stories.length,
+            itemBuilder: (context, index) {
+              final story = stories[index];
+              
+              String coverUrl = story['cover']?.toString() ?? story['cover_image']?.toString() ?? '';
+              if (coverUrl.isEmpty) {
+                final dynamic rawScenes = story['scenes_json'];
+                List<dynamic> parsedScenes = [];
+                if (rawScenes is List) {
+                  parsedScenes = rawScenes;
+                } else if (rawScenes is String) {
+                  try { parsedScenes = jsonDecode(rawScenes) as List<dynamic>; } catch (_) {}
+                }
+                if (parsedScenes.isNotEmpty && parsedScenes[0] is Map && parsedScenes[0]['imageUrl'] != null) {
+                  coverUrl = parsedScenes[0]['imageUrl'].toString();
+                }
+              }
+
+              final price = story['price_credits'] ?? 5;
+
+              return Container(
+                width: 130,
+                margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (coverUrl.isNotEmpty)
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                          child: Image.network(
+                            coverUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (ctx, err, stack) => const Icon(Icons.image_not_supported, size: 50, color: primaryPurple),
+                          ),
+                        ),
+                      )
+                    else
+                      const Expanded(child: Center(child: Icon(Icons.menu_book, size: 50, color: primaryPurple))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            story['title'] ?? 'قصة مجهولة',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '$price كريدت',
+                            style: const TextStyle(color: primaryPurple, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
+
 
   Widget _buildPrivateLibraryHorizontalList() {
     return FutureBuilder<List<dynamic>>(

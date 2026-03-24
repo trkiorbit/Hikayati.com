@@ -198,10 +198,26 @@ class _PublicLibraryScreenState extends State<PublicLibraryScreen> {
 
   Widget _buildStoryCard(Map<String, dynamic> story) {
     final id = story['id']?.toString() ?? '';
-    final coverUrl = story['cover']?.toString() ?? '';
+    String coverUrl = story['cover']?.toString() ?? story['cover_image']?.toString() ?? '';
     final title = story['title']?.toString() ?? 'قصة';
     final price = story['price_credits'] ?? 5;
     final isUnlocked = _unlockedIds.contains(id);
+
+    // إذا لم تكن هناك صورة غلاف صريحة، حاول جلبها من المشهد الأول
+    if (coverUrl.isEmpty) {
+      final dynamic rawScenes = story['scenes_json'];
+      List<dynamic> parsedScenes = [];
+      if (rawScenes is List) {
+        parsedScenes = rawScenes;
+      } else if (rawScenes is String) {
+        try { parsedScenes = jsonDecode(rawScenes) as List<dynamic>; } catch (_) {}
+      }
+      
+      if (parsedScenes.isNotEmpty && parsedScenes[0] is Map && parsedScenes[0]['imageUrl'] != null) {
+        coverUrl = parsedScenes[0]['imageUrl'].toString();
+      }
+    }
+
 
     return GestureDetector(
       onTap: () => _handleStoryTap(story),
