@@ -17,9 +17,10 @@ class _HakeemChatScreenState extends State<HakeemChatScreen> {
   bool _isLoading = false;
 
   final List<Map<String, String>> _quickActions = [
-    {'title': 'خدمة العملاء', 'msg': 'حياك الله في حكواتي، كيف أقدر أخدمك طال عمرك؟'},
-    {'title': 'كيف أشتري؟', 'msg': 'ممكن تشرح لي طريقة الشراء من المتجر؟'},
-    {'title': 'الأسئلة المتكررة', 'msg': 'ما هي أكثر الأسئلة المكررة حول التطبيق؟'},
+    {'title': 'خدمة العملاء', 'msg': 'أحتاج مساعدة بخصوص التطبيق، هل يمكنك توجيهي؟'},
+    {'title': 'اقترح قصة', 'msg': 'حكيم، اقترح لي فكرة قصة مشوقة ومفيدة لطفلي.'},
+    {'title': 'طباعة كتيب', 'msg': 'كيف يمكنني طباعة قصة لطفلي ككتيب حقيقي؟'},
+    {'title': 'كيف أشتري؟', 'msg': 'ممكن تشرح لي طريقة الشراء أو شحن الكريدت؟'},
   ];
 
   @override
@@ -101,14 +102,9 @@ class _HakeemChatScreenState extends State<HakeemChatScreen> {
                 runSpacing: 8,
                 alignment: WrapAlignment.start,
                 children: [
-                  ActionChip(
-                    label: const Text('اصنع بطلك', style: TextStyle(color: AppColors.deepBlack, fontWeight: FontWeight.bold)),
-                    backgroundColor: AppColors.secondary,
-                    onPressed: () => context.push('/avatar-lab'),
-                  ),
                   ..._quickActions.map((action) => ActionChip(
-                    label: Text(action['title']!, style: const TextStyle(color: Colors.white)),
-                    backgroundColor: Colors.grey[850],
+                    label: Text(action['title']!, style: const TextStyle(color: AppColors.deepBlack, fontWeight: FontWeight.bold)),
+                    backgroundColor: AppColors.secondary,
                     side: const BorderSide(color: AppColors.secondary),
                     onPressed: () {
                       _msgController.text = action['msg']!;
