@@ -3,17 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:hikayati/features/story_engine/services/tts_service.dart';
-import 'package:hikayati/features/story_engine/services/elevenlabs_direct_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class CinemaScreen extends StatefulWidget {
   final Map<String, dynamic> storyData;
   final String voice;
-  final bool fromLibrary; // تحديد مصدر الدخول للتوجيه الصحيح
+  final bool fromLibrary;
 
-  const CinemaScreen({super.key, required this.storyData, required this.voice, this.fromLibrary = false});
+  const CinemaScreen({
+    super.key,
+    required this.storyData,
+    required this.voice,
+    this.fromLibrary = false,
+  });
 
   @override
   State<CinemaScreen> createState() => _CinemaScreenState();
@@ -22,40 +24,31 @@ class CinemaScreen extends StatefulWidget {
 class _CinemaScreenState extends State<CinemaScreen>
     with TickerProviderStateMixin {
   final PageController _pageController = PageController();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   int _currentIndex = 0;
   late List<dynamic> _scenes;
 
-  // ==================================================
-  // التايمر - يعمل فقط بعد انتهاء TTS (buffer فقط)
-  // ==================================================
   Timer? _bufferTimer;
-  /// مدة الانتظار بعد انتهاء التلاوة قبل الانتقال تم تقليلها إلى ثانية واحدة لسرعة التدفق
   static const int _postTtsBufferSeconds = 1;
   int _bufferSecondsLeft = 0;
-  bool _isSpeaking = false;
+  bool _isPlaying = false;
   bool _bufferActive = false;
 
-  // نصف الشاشة: الصورة تظهر بزوم، النص يدخل من الأسفل
   late AnimationController _imageAnimController;
   late AnimationController _textAnimController;
   late Animation<double> _imageScaleAnim;
   late Animation<Offset> _textSlideAnim;
   late Animation<double> _textFadeAnim;
 
-
   static const platform = MethodChannel('com.hikayati/secure');
-
-  bool get _isClonedVoice => widget.voice == 'cloned';
-  String _clonedVoiceId = '';
 
   @override
   void initState() {
     super.initState();
     _secureScreen();
     _scenes = widget.storyData['scenes'] ?? [];
-    _loadVoiceId();
 
-    // إعداد الأنيميشن
     _imageAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -80,96 +73,68 @@ class _CinemaScreenState extends State<CinemaScreen>
     }
   }
 
-  Future<void> _loadVoiceId() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() => _clonedVoiceId = prefs.getString('cloned_voice_id') ?? '');
-    }
-  }
-
   Future<void> _secureScreen() async {
     try { await platform.invokeMethod('secureScreen'); } catch (_) {}
   }
+
   Future<void> _unsecureScreen() async {
     try { await platform.invokeMethod('unsecureScreen'); } catch (_) {}
   }
 
-
-
-  // ==================================================
-  // تحميل مشهد جديد: أنيميشن → TTS → buffer → انتقال
-  // ==================================================
+  // ── تحميل مشهد: أنيميشن → صوت محفوظ → buffer → انتقال ──
   void _loadScene(int index) async {
-    // 1. إلغاء أي مؤقت سابق
     _bufferTimer?.cancel();
     setState(() {
-      _isSpeaking = false;
+      _isPlaying = false;
       _bufferActive = false;
       _bufferSecondsLeft = 0;
     });
 
-    // 2. تشغيل أنيميشن الصورة
     _imageAnimController.forward(from: 0);
-
-    // 3. تأخير 0.55 ثانية ثم إظهار النص مع أنيميشن
     await Future.delayed(const Duration(milliseconds: 550));
     if (!mounted) return;
     _textAnimController.forward(from: 0);
 
-    // 4. تشغيل الصوت: محفوظ أولاً، ثم TTS كـ fallback
     final scene = _scenes[index] as Map;
-    final text = scene['text']?.toString() ?? '';
-    final savedAudio = scene['audio_url']?.toString();
-    if (text.isNotEmpty) {
-      setState(() => _isSpeaking = true);
-      await _speakAndWait(text, savedAudioUrl: savedAudio);
-      if (!mounted) return;
-      setState(() => _isSpeaking = false);
-    }
+    final savedAudioUrl = scene['audio_url']?.toString();
 
-    // 5. بعد انتهاء القراءة: buffer 3 ثواني ثم انتقل
+    // تشغيل الصوت المحفوظ فقط — لا TTS، لا توليد
+    if (savedAudioUrl != null && savedAudioUrl.isNotEmpty) {
+      setState(() => _isPlaying = true);
+      await _playSavedAudio(savedAudioUrl);
+      if (!mounted) return;
+      setState(() => _isPlaying = false);
+    }
+    // إذا لم يكن هناك صوت محفوظ → انتظر ثانيتين وانتقل
+
     if (index < _scenes.length - 1) {
       _startBuffer();
     } else {
-      // آخر مشهد
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) _onStoryComplete();
     }
   }
 
-  Future<void> _speakAndWait(String text, {String? savedAudioUrl}) async {
-    // أولوية: استخدم الصوت المحفوظ في Supabase إذا كان موجوداً
-    if (savedAudioUrl != null && savedAudioUrl.isNotEmpty) {
-      debugPrint('[Cinema] 🎵 تشغيل الصوت المحفوظ: $savedAudioUrl');
-      try {
-        final player = AudioPlayer();
-        final completer = Completer<void>();
-        player.onPlayerComplete.listen((_) {
-          if (!completer.isCompleted) completer.complete();
-        });
-        await player.play(UrlSource(savedAudioUrl));
-        await completer.future.timeout(
-          const Duration(seconds: 60),
-          onTimeout: () {},
-        );
-        await player.dispose();
-        return;
-      } catch (e) {
-        debugPrint('[Cinema] ⚠️ فشل تشغيل الصوت المحفوظ، تراجع للـ TTS: $e');
-      }
-    }
-
-    // fallback: توليد TTS إذا لم يكن هناك صوت محفوظ
-    final completer = Completer<void>();
-    if (_isClonedVoice && _clonedVoiceId.isNotEmpty) {
-      await ElevenLabsDirectService.speak(text: text, voiceId: _clonedVoiceId);
-    } else {
-      final voice = TtsService.resolveVoice(widget.voice);
-      await TtsService.speakAndWait(text, voice: voice, onComplete: () {
+  Future<void> _playSavedAudio(String url) async {
+    debugPrint('[Cinema] 🎵 تشغيل الصوت المحفوظ: $url');
+    try {
+      final completer = Completer<void>();
+      final sub = _audioPlayer.onPlayerComplete.listen((_) {
         if (!completer.isCompleted) completer.complete();
       });
-      await completer.future;
+      await _audioPlayer.play(UrlSource(url));
+      await completer.future.timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {},
+      );
+      sub.cancel();
+    } catch (e) {
+      debugPrint('[Cinema] ⚠️ فشل تشغيل الصوت المحفوظ: $e');
     }
+  }
+
+  void _stopAudio() {
+    _audioPlayer.stop();
   }
 
   void _startBuffer() {
@@ -186,7 +151,6 @@ class _CinemaScreenState extends State<CinemaScreen>
           _bufferSecondsLeft = 0;
           _bufferActive = false;
           timer.cancel();
-          // انتقل للمشهد التالي
           _pageController.nextPage(
             duration: const Duration(milliseconds: 600),
             curve: Curves.easeInOut,
@@ -198,22 +162,21 @@ class _CinemaScreenState extends State<CinemaScreen>
 
   void _onStoryComplete() {
     if (!mounted) return;
-    _stopAllAudio();
+    _stopAudio();
+    // الرسالة تعكس المصدر الحقيقي
+    final msg = widget.fromLibrary
+        ? '✨ انتهت القصة!'
+        : '✨ تم الحفظ في المكتبة الخاصة!';
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✨ تم الحفظ في المكتبة الخاصة'),
+      SnackBar(
+        content: Text(msg),
         backgroundColor: Colors.green,
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
       ),
     );
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) context.go('/');
     });
-  }
-
-  void _stopAllAudio() {
-    ElevenLabsDirectService.stop();
-    TtsService.stop();
   }
 
   @override
@@ -222,7 +185,8 @@ class _CinemaScreenState extends State<CinemaScreen>
     _bufferTimer?.cancel();
     _imageAnimController.dispose();
     _textAnimController.dispose();
-    _stopAllAudio();
+    _stopAudio();
+    _audioPlayer.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -241,9 +205,9 @@ class _CinemaScreenState extends State<CinemaScreen>
               const Text('لا توجد مشاهد', style: TextStyle(color: Colors.white70, fontSize: 16)),
               const SizedBox(height: 24),
               TextButton.icon(
-                onPressed: () => context.go('/library/private'),
+                onPressed: () => context.go('/'),
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                label: const Text('العودة للمكتبة', style: TextStyle(color: Colors.white)),
+                label: const Text('العودة للرئيسية', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -259,11 +223,10 @@ class _CinemaScreenState extends State<CinemaScreen>
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white70),
           onPressed: () {
-            _stopAllAudio();
+            _stopAudio();
             _bufferTimer?.cancel();
-            // إذا جاء من المكتبة → ارجع للمكتبة، وإلا → الرئيسية
-            if (widget.fromLibrary || Navigator.of(context).canPop()) {
-              context.go('/library/private');
+            if (widget.fromLibrary) {
+              context.go('/private-library'); // ✅ المسار الصحيح
             } else {
               context.go('/');
             }
@@ -276,7 +239,7 @@ class _CinemaScreenState extends State<CinemaScreen>
               'المشهد ${_currentIndex + 1} / ${_scenes.length}',
               style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
-            if (_isSpeaking) ...[
+            if (_isPlaying) ...[
               const SizedBox(width: 8),
               const Icon(Icons.volume_up, color: AppColors.primary, size: 16),
             ],
@@ -286,14 +249,13 @@ class _CinemaScreenState extends State<CinemaScreen>
       ),
       body: Column(
         children: [
-          // المشاهد
           Expanded(
             child: PageView.builder(
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (index) {
                 setState(() => _currentIndex = index);
-                _stopAllAudio();
+                _stopAudio();
                 _bufferTimer?.cancel();
                 _loadScene(index);
               },
@@ -303,7 +265,6 @@ class _CinemaScreenState extends State<CinemaScreen>
             ),
           ),
 
-          // شريط تقدم الـ buffer (يظهر فقط بعد انتهاء TTS)
           AnimatedOpacity(
             opacity: _bufferActive ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 300),
@@ -320,7 +281,6 @@ class _CinemaScreenState extends State<CinemaScreen>
             ),
           ),
 
-          // نقاط المشاهد
           Padding(
             padding: const EdgeInsets.only(bottom: 20, top: 4),
             child: Row(
@@ -351,7 +311,6 @@ class _CinemaScreenState extends State<CinemaScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // الصورة: زوم ناعم عند الدخول
           Flexible(
             flex: 3,
             child: AnimatedBuilder(
@@ -380,7 +339,8 @@ class _CinemaScreenState extends State<CinemaScreen>
                     );
                   },
                   errorBuilder: (_, __, ___) => Container(
-                    height: 280, color: Colors.grey[900],
+                    height: 280,
+                    color: Colors.grey[900],
                     child: const Center(
                       child: Icon(Icons.broken_image, color: Colors.white30, size: 60),
                     ),
@@ -391,7 +351,6 @@ class _CinemaScreenState extends State<CinemaScreen>
           ),
           const SizedBox(height: 24),
 
-          // النص: يدخل من الأسفل مع fade
           Flexible(
             flex: 2,
             child: SlideTransition(

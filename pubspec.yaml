@@ -112,3 +112,5 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+  # الخطوط تُحمَّل عبر google_fonts (مثبّت في dependencies) — لا ملفات يدوية

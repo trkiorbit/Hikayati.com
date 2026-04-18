@@ -1,23 +1,35 @@
 import 'package:flutter/foundation.dart';
 
 /// === ContentMonitorService ===
-/// المراقب البسيط (Content Monitor) الذي ينص عليه الدستور
-/// يفحص أي محتوى قبل العرض أو الإرسال للصورة للتأكد من خلوه من الانتهاكات السيئة.
+/// يفحص المحتوى قبل العرض/الإرسال للصورة.
+/// يستخدم مطابقة كلمة كاملة فقط (full-word matching) لتجنب الإيجابيات الكاذبة.
 class ContentMonitorService {
-  // قائمة أولية وبسيطة للكلمات الممنوعة (للتوضيح والأساس الأمني)
   static final List<String> _blockedKeywords = [
-    'blood', 'kill', 'death', 'naked', 'nude', 'sex', 'violence', 'murder', 'gun', 'weapon',
-    'دم', 'قتل', 'موت', 'عري', 'جنس', 'عنف', 'سلاح', 'مسدس', 'سكين'
+    // English — explicit full words only
+    'blood', 'kill', 'death', 'naked', 'nude', 'sex', 'violence',
+    'murder', 'gore', 'abuse',
+    // Arabic — كلمات كاملة فقط
+    'دم', 'قتل', 'موت', 'عري', 'جنس', 'عنف', 'اغتصاب',
   ];
 
-  /// يعيد true إذا كان المحتوى آمناً، و false إذا وجد كلمات محظورة.
+  /// يعيد true إذا كان المحتوى آمناً.
+  /// يستخدم مطابقة حدود الكلمة (word boundary) لتجنب الإيجابيات الكاذبة.
+  /// مثال: "killed" لا تُطابق "kill" كـ partial substring إلا إذا كانت كلمة مستقلة.
   static bool isContentSafe(String content) {
     if (content.trim().isEmpty) return true;
-    
+
     final lowerContent = content.toLowerCase();
+
     for (final word in _blockedKeywords) {
-      if (lowerContent.contains(word)) {
-        debugPrint('[ContentMonitor] 🚫 تم اكتشاف كلمة محظورة: $word');
+      // نبحث عن الكلمة كحدود مستقلة
+      final pattern = RegExp(
+        r'(^|[\s\.,!?;:()\[\]"\u0600-\u0610])' +
+            RegExp.escape(word) +
+            r'([\s\.,!?;:()\[\]"\u0600-\u0610]|$)',
+        caseSensitive: false,
+      );
+      if (pattern.hasMatch(lowerContent)) {
+        debugPrint('[ContentMonitor] 🚫 كلمة محظورة (مطابقة كاملة): "$word"');
         return false;
       }
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,19 @@ void main() async {
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
+
+  // تنظيف الجلسات المنتهية قبل تحميل التطبيق
+  final session = Supabase.instance.client.auth.currentSession;
+  if (session != null) {
+    try {
+      await Supabase.instance.client.auth.refreshSession();
+      debugPrint('[Auth] تم تجديد الجلسة بنجاح');
+    } catch (_) {
+      debugPrint('[Auth] الجلسة منتهية — تسجيل خروج تلقائي');
+      await Supabase.instance.client.auth.signOut();
+    }
+  }
+
   runApp(const ProviderScope(child: HikayatiApp()));
 }
 
@@ -33,10 +47,10 @@ class HikayatiApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('ar', 'SA'), // Arabic (Saudi Arabia) as default
-        Locale('en', 'US'), // English as fallback
+        Locale('ar', 'SA'),
+        Locale('en', 'US'),
       ],
-      locale: const Locale('ar', 'SA'), // Force Arabic / RTL by default
+      locale: const Locale('ar', 'SA'),
 
       routerConfig: AppRouter.router,
     );

@@ -2,10 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hikayati/features/avatar_lab/services/avatar_vision_service.dart';
+import 'package:hikayati/application/use_cases/save_avatar_use_case.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:hikayati/core/network/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hikayati/core/theme/app_colors.dart';
 
 class AvatarLabScreen extends StatefulWidget {
   const AvatarLabScreen({super.key});
@@ -21,7 +22,7 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
   List<Map<String, dynamic>> _generatedOptions = [];
   Map<String, dynamic>? _analyzedData;
   Map<String, dynamic>? _currentAvatar;
-  final TextEditingController _clothesController = TextEditingController();
+  bool _isSavingCostume = false;
 
   @override
   void initState() {
@@ -60,9 +61,88 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
     }
   }
 
+  Future<void> _showAvatarConsent() async {
+    if (_selectedImage == null) return;
+    bool accepted = false;
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.cardSurface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('موافقة إنشاء الأفاتار',
+              style: TextStyle(color: AppColors.vibrantOrange, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'قبل المتابعة، يرجى الإقرار بالتالي:',
+                  style: TextStyle(color: AppColors.glassWhite, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                _consentBullet('أنا ولي أمر الطفل أو لدي الإذن اللازم لاستخدام هذه الصورة.'),
+                _consentBullet('ستُستخدم الصورة لإنشاء شخصية بصرية (أفاتار) داخل التطبيق فقط.'),
+                _consentBullet('قد تُحفظ البيانات الناتجة لتحسين التجربة واسترجاع الشخصية لاحقًا.'),
+                _consentBullet('يمكنني طلب حذف الأفاتار وبياناته في أي وقت من صفحة الحساب.'),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: accepted,
+                      activeColor: AppColors.vibrantOrange,
+                      onChanged: (v) => setDialogState(() => accepted = v ?? false),
+                    ),
+                    Expanded(
+                      child: Text('أوافق على الشروط أعلاه',
+                          style: TextStyle(color: AppColors.glassWhite)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: accepted ? () => Navigator.pop(ctx, true) : null,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.vibrantOrange),
+              child: const Text('متابعة', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == true) _analyzeImage();
+  }
+
+  Widget _consentBullet(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Icon(Icons.check_circle_outline, size: 16, color: AppColors.vibrantOrange),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: TextStyle(color: AppColors.glassWhite, fontSize: 14, height: 1.5)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _analyzeImage() async {
     if (_selectedImage == null) return;
-    
+
     setState(() => _isLoading = true);
 
     try {
@@ -115,26 +195,10 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
   Future<void> _saveAvatar(Map<String, dynamic> avatarData) async {
     setState(() => _isLoading = true);
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) throw Exception('يجب تسجيل الدخول أولاً');
-
-      // الصورة الأصلية مرفوعة مسبقاً، نأخذ رابطها المرجعي
-      final String sourceImageUrl = avatarData['reference_image_url'] ?? '';
-
-      // 1. خصم 20 كريدت (تكلفة إنشاء الأفاتار لأول مرة)
-      await SupabaseService.deductCredits(20, 'إنشاء بطل جديد');
-
-      // 2. تحديث البيانات بالرابط
-      final dataToSave = Map<String, dynamic>.from(avatarData);
-      dataToSave['reference_image_url'] = sourceImageUrl;
-
-      await Supabase.instance.client.from('profiles').update({
-        'avatar_profile_summary': dataToSave,
-      }).eq('user_id', userId);
-
+      await SaveAvatarUseCase().execute(avatarData);
       if (mounted) {
         setState(() {
-          _currentAvatar = dataToSave;
+          _currentAvatar = avatarData;
           _generatedOptions = [];
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -183,30 +247,23 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
     }
   }
 
-  Future<void> _changeClothes() async {
-    if (_clothesController.text.trim().isEmpty) return;
-    setState(() => _isLoading = true);
+  String _currentCostumeAr() {
+    final en = _currentAvatar?['current_clothes'] ?? '';
+    for (final c in SaveAvatarUseCase.costumes) {
+      if (c['en'] == en) return c['ar']!;
+    }
+    return en.isNotEmpty ? en : 'غير محدد';
+  }
+
+  Future<void> _selectCostume(String costumeEn) async {
+    if (_currentAvatar == null) return;
+    setState(() => _isSavingCostume = true);
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) throw Exception('يجب تسجيل الدخول أولاً');
-
-      // خصم 5 كريدت
-      await SupabaseService.deductCredits(5, 'تغيير ملابس البطل');
-
-      final updatedAvatar = Map<String, dynamic>.from(_currentAvatar!);
-      updatedAvatar['current_clothes'] = _clothesController.text.trim();
-
-      await Supabase.instance.client.from('profiles').update({
-        'avatar_profile_summary': updatedAvatar,
-      }).eq('user_id', userId);
-
+      final updated = await SaveAvatarUseCase().selectCostume(_currentAvatar!, costumeEn);
       if (mounted) {
-        setState(() {
-          _currentAvatar = updatedAvatar;
-          _clothesController.clear();
-        });
+        setState(() => _currentAvatar = updated);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ تم تغيير الملابس وخصم 5 جواهر!')),
+          const SnackBar(content: Text('تم تغيير الزي بنجاح')),
         );
       }
     } catch (e) {
@@ -214,7 +271,7 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل التغيير: $e')));
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSavingCostume = false);
     }
   }
 
@@ -279,9 +336,9 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
         child: Column(
           children: [
             if (_currentAvatar != null) ...[
-              const Icon(Icons.check_circle, color: Colors.green, size: 60),
+              Icon(Icons.check_circle, color: AppColors.success, size: 60),
               const SizedBox(height: 10),
-              const Text('لديك بطل محفوظ بالفعل!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text('لديك بطل محفوظ بالفعل!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.glassWhite)),
               const SizedBox(height: 20),
               if (_currentAvatar!['preview_url'] != null)
                 ClipRRect(
@@ -289,25 +346,34 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
                   child: Image.network(_currentAvatar!['preview_url'], height: 200, fit: BoxFit.cover),
                 ),
               const SizedBox(height: 20),
-              Text('الملابس الحالية: ${_currentAvatar!['current_clothes'] ?? 'غير محدد'}', textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _clothesController,
-                decoration: const InputDecoration(
-                  labelText: 'ماذا تريد أن يرتدي بطلك الآن؟',
-                  border: OutlineInputBorder(),
-                ),
+              Text('الزي الحالي: ${_currentCostumeAr()}', textAlign: TextAlign.center, style: TextStyle(color: AppColors.glassWhite)),
+              const SizedBox(height: 16),
+              Text('اختر زيًا لبطلك:', style: TextStyle(color: AppColors.vibrantOrange, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: SaveAvatarUseCase.costumes.map((c) {
+                  final isSelected = _currentAvatar!['current_clothes'] == c['en'];
+                  return ChoiceChip(
+                    label: Text(c['ar']!, style: TextStyle(color: isSelected ? AppColors.deepNight : AppColors.glassWhite)),
+                    selected: isSelected,
+                    selectedColor: AppColors.vibrantOrange,
+                    backgroundColor: AppColors.cardSurface,
+                    onSelected: _isSavingCostume ? null : (selected) {
+                      if (selected && !isSelected) _selectCostume(c['en']!);
+                    },
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _changeClothes,
-                icon: const Icon(Icons.checkroom),
-                label: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('تغيير الملابس (خصم 5 جواهر)'),
-              ),
+              if (_isSavingCostume) ...[
+                const SizedBox(height: 8),
+                CircularProgressIndicator(color: AppColors.vibrantOrange),
+              ],
               const Divider(height: 40),
               TextButton(
                 onPressed: _isLoading ? null : _deleteAvatar,
-                child: const Text('حذف البطل والبدء من جديد', style: TextStyle(color: Colors.redAccent)),
+                child: Text('حذف البطل والبدء من جديد', style: TextStyle(color: AppColors.error)),
               ),
         ] else if (_analyzedData != null && _generatedOptions.isEmpty) ...[
           const Text('مراجعة الوصف البصري للبطل', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -320,17 +386,17 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
           const SizedBox(height: 30),
           ElevatedButton.icon(
             onPressed: _isLoading ? null : _proceedToGenerate,
-            icon: const Icon(Icons.check),
-            label: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('موافق، ابدأ التوليد 🚀'),
+            icon: Icon(Icons.check, color: AppColors.glassWhite),
+            label: _isLoading ? CircularProgressIndicator(color: AppColors.glassWhite) : const Text('موافق، ابدأ التوليد 🚀', style: TextStyle(color: AppColors.glassWhite)),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.primaryDeepPurple,
             ),
           ),
           const SizedBox(height: 10),
           TextButton(
             onPressed: () => setState(() { _analyzedData = null; _selectedImage = null; }),
-            child: const Text('إلغاء واختيار صورة أخرى', style: TextStyle(color: Colors.redAccent)),
+            child: Text('إلغاء واختيار صورة أخرى', style: TextStyle(color: AppColors.error)),
           ),
             ] else if (_generatedOptions.isEmpty) ...[
               // منطقة رفع الصورة
@@ -365,7 +431,7 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
               const SizedBox(height: 20),
               if (_selectedImage != null)
                 ElevatedButton(
-              onPressed: _isLoading ? null : _analyzeImage,
+              onPressed: _isLoading ? null : _showAvatarConsent,
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: Colors.purple,

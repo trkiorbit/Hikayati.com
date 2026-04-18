@@ -23,7 +23,7 @@ class _PrivateLibraryScreenState extends State<PrivateLibraryScreen> {
   bool _isDeleteMode = false;
   final Set<String> _selectedIds = {};
 
-  static const int maxStories = 5;
+  static const int maxStories = 10;
 
   @override
   void initState() {

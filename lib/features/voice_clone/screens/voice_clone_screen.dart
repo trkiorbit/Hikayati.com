@@ -7,6 +7,7 @@ import 'package:hikayati/core/theme/app_colors.dart';
 import 'package:hikayati/features/story_engine/services/voice_clone_service.dart';
 import 'package:hikayati/features/story_engine/services/elevenlabs_direct_service.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:hikayati/core/network/supabase_service.dart';
 
 class VoiceCloneScreen extends StatefulWidget {
   const VoiceCloneScreen({super.key});
@@ -50,6 +51,82 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
     _audioRecorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  Future<void> _showVoiceConsent() async {
+    bool accepted = false;
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1C2333),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('موافقة استنساخ الصوت',
+              style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('قبل بدء التسجيل، يرجى الإقرار بالتالي:',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                _consentBullet('أؤكد أنني أملك هذا الصوت أو لدي إذن صريح لاستخدامه.'),
+                _consentBullet('سيتم استخدام التسجيل لإنشاء صوت سرد داخل التطبيق فقط.'),
+                _consentBullet('قد يتم حفظ بيانات الصوت والمعالجة المرتبطة به لتوفير الخدمة.'),
+                _consentBullet('يمكنني حذف الصوت المستنسخ في أي وقت من داخل التطبيق.'),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: accepted,
+                      activeColor: AppColors.secondary,
+                      onChanged: (v) => setDialogState(() => accepted = v ?? false),
+                    ),
+                    Expanded(
+                      child: Text('أوافق على الشروط أعلاه',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: accepted ? () => Navigator.pop(ctx, true) : null,
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
+              child: const Text('بدء التسجيل', style: TextStyle(color: Colors.black)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == true) _startRecording();
+  }
+
+  Widget _consentBullet(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Icon(Icons.check_circle_outline, size: 16, color: AppColors.secondary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5)),
+          ),
+        ],
+      ),
+    );
   }
 
   // بدء التسجيل
@@ -141,6 +218,9 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
     if (_recordedFilePath == null) return;
     setState(() => _isLoading = true);
     try {
+      // 1. خصم 20 كريدت لتكلفة إنشاء نسخة صوتية حسب المطلوب
+      await SupabaseService.deductCredits(20, 'إنشاء نسخة صوتية');
+
       final file = File(_recordedFilePath!);
       final bytes = await file.readAsBytes();
       final voiceId = await VoiceCloneService.cloneVoice(
@@ -267,7 +347,7 @@ class _VoiceCloneScreenState extends State<VoiceCloneScreen> {
         ),
         const SizedBox(height: 40),
         ElevatedButton.icon(
-          onPressed: _startRecording,
+          onPressed: _showVoiceConsent,
           icon: const Icon(Icons.play_arrow),
           label: const Text('بدء التسجيل الآن', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(

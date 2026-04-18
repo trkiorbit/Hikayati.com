@@ -66,10 +66,6 @@ class AudioService {
         await _audioPlayer.play(UrlSource(audioUrl));
       }
 
-      if (_isDisposed || audioUrl.isEmpty) return;
-      
-      await _audioPlayer.play(UrlSource(audioUrl));
-      
       // الانتظار حتى يكتمل المقطع الصوتي تماماً (لضمان التسلسل في السينما)
       if (!_isDisposed) {
         await _audioPlayer.onPlayerComplete.first;

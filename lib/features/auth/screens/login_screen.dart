@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/application/use_cases/auth_use_cases.dart';
+import 'package:hikayati/core/theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -91,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF6A0DAD), Color(0xFF1A1A2E)],
+            colors: [AppColors.primaryDeepPurple, AppColors.deepNight],
           ),
         ),
         child: Center(
@@ -100,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.auto_awesome, size: 80, color: Color(0xFFFFD700)),
+                const Icon(Icons.auto_awesome, size: 80, color: AppColors.warmGold),
                 const SizedBox(height: 20),
                 const Text(
                   'حكواتي',
@@ -155,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             data: ThemeData(unselectedWidgetColor: Colors.white70),
                             child: Checkbox(
                               value: _rememberMe,
-                              activeColor: const Color(0xFFFFD700),
+                              activeColor: AppColors.warmGold,
                               checkColor: Colors.black,
                               onChanged: (val) => setState(() => _rememberMe = val!),
                             ),
@@ -165,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextButton(
                         onPressed: _resetPassword,
-                        child: const Text('نسيت كلمة المرور؟', style: TextStyle(color: Color(0xFFFFD700))),
+                        child: const Text('نسيت كلمة المرور؟', style: TextStyle(color: AppColors.warmGold)),
                       ),
                     ],
                   ),
@@ -179,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700),
+                      backgroundColor: AppColors.warmGold,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

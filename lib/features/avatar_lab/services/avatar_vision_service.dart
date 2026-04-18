@@ -10,7 +10,6 @@
 ///   "Services are isolated — avatar/vision analysis service is separate"
 
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';

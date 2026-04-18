@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"d:\\\\Hikayati.com\\\\lib\" -name \"*.dart\" -type f -exec grep -l \"class.*Model\\\\|class.*Entity\\\\|class.*DTO\" {} \\\\;)",
+      "Bash(xargs grep *)",
+      "Bash(find /d/Hikayati.com/lib -name \"*.dart\" -type f -exec grep -l \"TODO\\\\|FIXME\\\\|BUG\\\\|ERROR\" {} \\\\;)"
+    ]
+  }
+}

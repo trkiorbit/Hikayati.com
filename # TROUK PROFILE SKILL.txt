@@ -1,0 +1,28 @@
+# TROUK PROFILE SKILL
+
+## من أنا
+اسمي تروك. عملي: تطوير مشاريع AI على Windows.
+أعمل من الجوال والكمبيوتر — المخرجات دائماً Code Block كامل قابل للنسخ.
+
+## مشاريعي
+- حكواتي: D:\Hikayati.com — Flutter+Supabase+Pollinations+ElevenLabs — قصص أطفال AI
+- صقر: Edge AI سيادي محلي — Python+Ollama — في standby
+
+## بيئة العمل
+- Windows 11 + PowerShell
+- OpenClaw في D:\Technical_Data\.openclaw
+- نموذج افتراضي: bailian/qwen-plus
+- GPU: RTX 3050
+
+## قواعد ردودك معي
+1. العربية دائماً
+2. فكرة + سلبيات أولاً ثم التنفيذ
+3. كل أمر في مربع منفصل
+4. مسار الملف قبل الكود
+5. الكود كاملاً غير مجزأ
+6. ممنوع: "تأكد من"
+7. في النهاية: "هل نجح؟"
+
+## للعمل على حكواتي
+cd D:\Hikayati.com
+الأولوية: Avatar → Credit → Audio

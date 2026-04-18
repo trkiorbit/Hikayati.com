@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>حكواتي — تصاميم الإطلاق النهائية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#2D0B5A;
+    --deep2:#1A0640;
+    --deep3:#0E0326;
+    --orange:#FF8C00;
+    --orange2:#FF6A00;
+    --gold:#FFD700;
+    --gold2:#FFB300;
+    --white:#FFF7ED;
+    --muted:#B9A7D9;
+    --glass:rgba(255,255,255,0.06);
+    --glass-border:rgba(255,215,0,0.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:radial-gradient(ellipse at top, #3a1170 0%, var(--deep3) 60%, #000 100%);min-height:100vh;font-family:'Cairo',sans-serif;color:var(--white)}
+  .page{max-width:1720px;margin:0 auto;padding:48px 24px 80px}
+  .head{text-align:center;margin-bottom:40px}
+  .head h1{font-size:32px;font-weight:900;letter-spacing:1px;background:linear-gradient(90deg,var(--gold),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .head p{color:var(--muted);margin-top:8px;font-size:14px}
+  .chips{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+  .chip{padding:6px 14px;border:1px solid var(--glass-border);border-radius:999px;font-size:12px;color:var(--gold);background:var(--glass)}
+  .row{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+
+  /* Phone frame */
+  .phone{width:390px;height:844px;background:linear-gradient(180deg,#2a0a55 0%,#14032f 100%);border-radius:48px;padding:14px;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 2px rgba(255,215,0,.08),0 0 60px rgba(255,140,0,.12);position:relative;flex-shrink:0}
+  .phone::before{content:"";position:absolute;top:18px;left:50%;transform:translateX(-50%);width:120px;height:28px;background:#000;border-radius:20px;z-index:5}
+  .screen{width:100%;height:100%;border-radius:36px;overflow:hidden;position:relative;background:radial-gradient(ellipse at 50% 0%,#3a1170 0%, #1a0640 45%, #0b0220 100%)}
+  .stars{position:absolute;inset:0;background-image:radial-gradient(1px 1px at 20% 30%,#fff 50%,transparent 100%),radial-gradient(1px 1px at 70% 20%,#ffd700 50%,transparent 100%),radial-gradient(1.5px 1.5px at 40% 70%,#fff 50%,transparent 100%),radial-gradient(1px 1px at 85% 55%,#ffb300 50%,transparent 100%),radial-gradient(1px 1px at 10% 80%,#fff 50%,transparent 100%),radial-gradient(1.5px 1.5px at 60% 90%,#ffd700 50%,transparent 100%),radial-gradient(1px 1px at 30% 15%,#fff 50%,transparent 100%);opacity:.55;pointer-events:none}
+  .content{position:relative;z-index:2;padding:56px 18px 90px;height:100%;overflow:hidden}
+  .label{position:absolute;top:-34px;right:50%;transform:translateX(50%);color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.5px}
+
+  /* Top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:8px}
+  .brand-mark{width:36px;height:36px;border-radius:12px;background:radial-gradient(circle at 30% 30%,var(--gold),var(--orange) 70%);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 14px rgba(255,140,0,.45)}
+  .brand-name{font-weight:900;font-size:18px;letter-spacing:.5px;color:var(--white)}
+  .credit{display:flex;align-items:center;gap:6px;padding:6px 12px;background:linear-gradient(135deg,rgba(255,215,0,.18),rgba(255,140,0,.12));border:1px solid rgba(255,215,0,.35);border-radius:999px;font-weight:700;color:var(--gold);font-size:13px}
+  .credit::before{content:"★";color:var(--gold)}
+  .icon-btn{width:36px;height:36px;border-radius:12px;background:var(--glass);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:16px}
+
+  /* Hero banner */
+  .hero{position:relative;border-radius:26px;overflow:hidden;padding:22px 20px;background:linear-gradient(135deg,rgba(45,11,90,.85) 0%, rgba(255,140,0,.22) 100%);border:1px solid rgba(255,215,0,.22);box-shadow:inset 0 0 40px rgba(255,140,0,.12)}
+  .hero .glow{position:absolute;width:180px;height:180px;right:-40px;top:-40px;background:radial-gradient(circle,rgba(255,215,0,.45),transparent 70%);filter:blur(20px)}
+  .hero h2{font-size:22px;font-weight:900;line-height:1.35;margin-bottom:6px}
+  .hero h2 span{color:var(--gold)}
+  .hero p{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .cta{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#1a0640;font-weight:900;font-size:15px;box-shadow:0 10px 30px rgba(255,140,0,.5),0 0 0 2px rgba(255,215,0,.35) inset;border:none;text-decoration:none}
+  .cta::after{content:"›";font-size:22px}
+
+  /* Quick actions */
+  .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .quick-card{padding:14px 12px;border-radius:18px;background:var(--glass);border:1px solid var(--glass-border);display:flex;align-items:center;gap:10px}
+  .quick-ico{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,rgba(255,140,0,.25),rgba(255,215,0,.15));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .quick-t{font-size:13px;font-weight:700;color:var(--white);line-height:1.2}
+  .quick-s{font-size:10px;color:var(--muted);margin-top:2px}
+
+  /* Sections */
+  .section{margin-top:20px}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px}
+  .section-head h3{font-size:14px;font-weight:800;color:var(--white)}
+  .section-head a{font-size:11px;color:var(--gold)}
+  .hscroll{display:flex;gap:10px;overflow:hidden}
+  .tile{min-width:130px;height:160px;border-radius:18px;background:linear-gradient(160deg,#4b1b9b,#1a0640);border:1px solid rgba(255,215,0,.15);padding:10px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden}
+  .tile::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,140,0,.35),transparent 60%)}
+  .tile.lock::after{content:"🔒";position:absolute;top:10px;left:10px;color:var(--gold)}
+  .tile-title{font-size:12px;font-weight:700;position:relative;z-index:2}
+  .tile-meta{font-size:10px;color:var(--muted);position:relative;z-index:2}
+
+  /* Bottom nav */
+  .nav{position:absolute;bottom:12px;right:12px;left:12px;height:68px;border-radius:24px;background:rgba(20,3,47,.85);backdrop-filter:blur(18px);border:1px solid rgba(255,215,0,.18);display:flex;justify-content:space-around;align-items:center;z-index:3}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--muted);padding:6px 8px;border-radius:14px}
+  .nav-item.active{color:var(--gold);background:linear-gradient(135deg,rgba(255,140,0,.18),rgba(255,215,0,.08))}
+  .nav-ico{font-size:18px}
+
+  /* Create screen */
+  .stepper{display:flex;align-items:center;gap:6px;padding:10px 4px 16px}
+  .step{flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.12)}
+  .step.on{background:linear-gradient(90deg,var(--orange),var(--gold))}
+  .step-label{font-size:11px;color:var(--muted);margin-bottom:10px}
+  .field{padding:14px;border-radius:18px;background:var(--glass);border:1px solid var(--glass-border);margin-bottom:12px}
+  .field-t{font-size:13px;font-weight:700;margin-bottom:8px}
+  .field-s{font-size:11px;color:var(--muted);margin-bottom:10px}
+  .chip-row{display:flex;gap:6px;flex-wrap:wrap}
+  .opt{padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:12px;color:var(--white)}
+  .opt.sel{background:linear-gradient(135deg,var(--orange),var(--orange2));color:#1a0640;font-weight:800;border-color:transparent}
+  .hero-pick{display:flex;gap:10px;margin-top:10px}
+  .hero-card{flex:1;aspect-ratio:3/4;border-radius:14px;background:linear-gradient(160deg,#4b1b9b,#1a0640);border:1px solid rgba(255,215,0,.2);display:flex;align-items:flex-end;justify-content:center;padding:8px;font-size:11px;color:var(--muted);position:relative}
+  .hero-card.sel{border:2px solid var(--gold);box-shadow:0 0 20px rgba(255,215,0,.3)}
+  .cost-bar{margin-top:14px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,140,0,.08));border:1px solid rgba(255,215,0,.3);display:flex;justify-content:space-between;align-items:center}
+  .cost-total{font-size:16px;font-weight:900;color:var(--gold)}
+  .cost-label{font-size:11px;color:var(--muted)}
+  .breakdown{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+  .big-cta{width:100%;padding:16px;border-radius:18px;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#1a0640;font-weight:900;font-size:16px;border:none;box-shadow:0 14px 40px rgba(255,140,0,.45);margin-top:14px}
+
+  /* Library tabs */
+  .tabs{display:flex;gap:8px;background:var(--glass);padding:4px;border-radius:16px;margin-bottom:14px;border:1px solid var(--glass-border)}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:12px;font-size:13px;font-weight:700;color:var(--muted)}
+  .tab.on{background:linear-gradient(135deg,var(--orange),var(--orange2));color:#1a0640}
+  .lib-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .lib-card{aspect-ratio:3/4;border-radius:18px;background:linear-gradient(160deg,#4b1b9b,#1a0640);border:1px solid rgba(255,215,0,.15);padding:10px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden}
+  .lib-card::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,140,0,.4),transparent 55%)}
+  .lib-t{font-size:12px;font-weight:800;position:relative;z-index:2}
+  .lib-m{font-size:10px;color:var(--muted);position:relative;z-index:2}
+  .lib-pill{position:absolute;top:8px;right:8px;background:rgba(255,215,0,.18);color:var(--gold);font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;z-index:2;border:1px solid rgba(255,215,0,.35)}
+
+  /* Settings */
+  .profile-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:20px;background:linear-gradient(135deg,rgba(255,140,0,.18),rgba(255,215,0,.08));border:1px solid rgba(255,215,0,.3);margin-bottom:14px}
+  .avatar{width:56px;height:56px;border-radius:18px;background:linear-gradient(135deg,var(--orange),var(--gold));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+  .profile-name{font-size:15px;font-weight:800}
+  .profile-mail{font-size:11px;color:var(--muted)}
+  .group{margin-top:14px}
+  .group-t{font-size:11px;color:var(--muted);font-weight:700;padding:0 4px 8px}
+  .list{background:var(--glass);border:1px solid var(--glass-border);border-radius:18px;overflow:hidden}
+  .list-item{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .list-item:last-child{border-bottom:none}
+  .li-ico{width:34px;height:34px;border-radius:10px;background:rgba(255,140,0,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .li-t{flex:1;font-size:13px;font-weight:600}
+  .li-m{font-size:11px;color:var(--muted)}
+  .li-c{color:var(--muted);font-size:18px}
+
+  /* legend */
+  .legend{margin-top:60px;text-align:center;color:var(--muted);font-size:12px;line-height:1.8}
+  .legend b{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="head">
+    <h1>حكواتي — تصاميم الإطلاق النهائية</h1>
+    <p>Deep Purple #2D0B5A · Vibrant Orange #FF8C00 · Golden #FFD700 · Cairo Font</p>
+    <div class="chips">
+      <div class="chip">الصفحة الرئيسية</div>
+      <div class="chip">أنشئ قصة</div>
+      <div class="chip">المكتبات</div>
+      <div class="chip">الإعدادات</div>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <!-- 1) HOME -->
+    <div class="phone">
+      <span class="label">١ — الرئيسية</span>
+      <div class="screen">
+        <div class="stars"></div>
+        <div class="content">
+          <div class="topbar">
+            <div class="brand">
+              <div class="brand-mark">📖</div>
+              <div class="brand-name">حكواتي</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="credit">١٠٠</div>
+              <div class="icon-btn">☰</div>
+            </div>
+          </div>
+
+          <div class="hero">
+            <div class="glow"></div>
+            <h2>حوّل طفلك إلى <span>بطل قصة</span></h2>
+            <p>قصة سينمائية بصوتك وصور بطلها ابنك</p>
+            <a class="cta">أنشئ قصة</a>
+          </div>
+
+          <div class="quick">
+            <div class="quick-card">
+              <div class="quick-ico">🦸</div>
+              <div>
+                <div class="quick-t">اصنع بطلك</div>
+                <div class="quick-s">هوية من صورة الطفل</div>
+              </div>
+            </div>
+            <div class="quick-card">
+              <div class="quick-ico">🎙️</div>
+              <div>
+                <div class="quick-t">اروِ بصوتك</div>
+                <div class="quick-s">استنساخ صوت الرواية</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-head">
+              <h3>مكتبتي</h3>
+              <a>عرض الكل ›</a>
+            </div>
+            <div class="hscroll">
+              <div class="tile"><div class="tile-title">الأميرة والغابة</div><div class="tile-meta">قبل ٣ أيام</div></div>
+              <div class="tile"><div class="tile-title">رحلة الفضاء</div><div class="tile-meta">قبل أسبوع</div></div>
+              <div class="tile"><div class="tile-title">القلعة السحرية</div><div class="tile-meta">قبل أسبوعين</div></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-head">
+              <h3>المكتبة العامة</h3>
+              <a>عرض الكل ›</a>
+            </div>
+            <div class="hscroll">
+              <div class="tile lock"><div class="tile-title">التنين الذهبي</div><div class="tile-meta">افتح بـ ١٠</div></div>
+              <div class="tile lock"><div class="tile-title">جزيرة الكنز</div><div class="tile-meta">افتح بـ ١٠</div></div>
+              <div class="tile lock"><div class="tile-title">نجوم الصحراء</div><div class="tile-meta">افتح بـ ١٠</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="nav-item active"><div class="nav-ico">🏠</div>الرئيسية</div>
+          <div class="nav-item"><div class="nav-ico">📚</div>مكتبتي</div>
+          <div class="nav-item"><div class="nav-ico">✨</div>أنشئ</div>
+          <div class="nav-item"><div class="nav-ico">🛍️</div>المتجر</div>
+          <div class="nav-item"><div class="nav-ico">⚙️</div>الإعدادات</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) CREATE STORY -->
+    <div class="phone">
+      <span class="label">٢ — أنشئ قصة</span>
+      <div class="screen">
+        <div class="stars"></div>
+        <div class="content">
+          <div class="topbar">
+            <div class="icon-btn">›</div>
+            <div class="brand-name" style="font-size:15px">أنشئ قصة</div>
+            <div class="credit">١٠٠</div>
+          </div>
+
+          <div class="stepper">
+            <div class="step on"></div>
+            <div class="step on"></div>
+            <div class="step on"></div>
+            <div class="step"></div>
+          </div>
+          <div class="step-label">٣ من ٤ · التفاصيل</div>
+
+          <div class="field">
+            <div class="field-t">اختر بطل القصة</div>
+            <div class="field-s">من أفاتاراتك المحفوظة</div>
+            <div class="hero-pick">
+              <div class="hero-card sel">سلمى</div>
+              <div class="hero-card">يوسف</div>
+              <div class="hero-card">+ جديد</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-t">الموضوع</div>
+            <div class="chip-row">
+              <div class="opt sel">مغامرة</div>
+              <div class="opt">صداقة</div>
+              <div class="opt">فضاء</div>
+              <div class="opt">أميرات</div>
+              <div class="opt">حيوانات</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-t">الصوت</div>
+            <div class="chip-row">
+              <div class="opt">راوٍ عادي</div>
+              <div class="opt sel">صوتي المستنسخ ★</div>
+            </div>
+          </div>
+
+          <div class="cost-bar">
+            <div>
+              <div class="cost-label">إجمالي التكلفة</div>
+              <div class="cost-total">٣٠ كريدت</div>
+            </div>
+            <div class="breakdown" style="text-align:left">
+              القصة ١٠<br>+ الأفاتار ١٠<br>+ الصوت ١٠
+            </div>
+          </div>
+
+          <button class="big-cta">ابدأ التوليد ✨</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) LIBRARIES -->
+    <div class="phone">
+      <span class="label">٣ — المكتبات</span>
+      <div class="screen">
+        <div class="stars"></div>
+        <div class="content">
+          <div class="topbar">
+            <div class="brand-name" style="font-size:17px">المكتبة</div>
+            <div class="credit">١٠٠</div>
+          </div>
+
+          <div class="tabs">
+            <div class="tab on">مكتبتي</div>
+            <div class="tab">المكتبة العامة</div>
+          </div>
+
+          <div class="lib-grid">
+            <div class="lib-card">
+              <div class="lib-pill">ملكي</div>
+              <div class="lib-t">الأميرة والغابة</div>
+              <div class="lib-m">١٢ مشهد · قبل ٣ أيام</div>
+            </div>
+            <div class="lib-card">
+              <div class="lib-pill">ملكي</div>
+              <div class="lib-t">رحلة الفضاء</div>
+              <div class="lib-m">١٠ مشاهد · قبل أسبوع</div>
+            </div>
+            <div class="lib-card">
+              <div class="lib-pill">ملكي</div>
+              <div class="lib-t">القلعة السحرية</div>
+              <div class="lib-m">٨ مشاهد · قبل أسبوعين</div>
+            </div>
+            <div class="lib-card">
+              <div class="lib-pill">ملكي</div>
+              <div class="lib-t">فارس الصحراء</div>
+              <div class="lib-m">١٤ مشهد · قبل ٢٠ يوم</div>
+            </div>
+            <div class="lib-card">
+              <div class="lib-pill">ملكي</div>
+              <div class="lib-t">الدب الذكي</div>
+              <div class="lib-m">٦ مشاهد · قبل شهر</div>
+            </div>
+            <div class="lib-card">
+              <div class="lib-pill">ملكي</div>
+              <div class="lib-t">كوكب النجوم</div>
+              <div class="lib-m">٩ مشاهد · قبل شهر</div>
+            </div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="nav-item"><div class="nav-ico">🏠</div>الرئيسية</div>
+          <div class="nav-item active"><div class="nav-ico">📚</div>مكتبتي</div>
+          <div class="nav-item"><div class="nav-ico">✨</div>أنشئ</div>
+          <div class="nav-item"><div class="nav-ico">🛍️</div>المتجر</div>
+          <div class="nav-item"><div class="nav-ico">⚙️</div>الإعدادات</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) SETTINGS -->
+    <div class="phone">
+      <span class="label">٤ — الإعدادات</span>
+      <div class="screen">
+        <div class="stars"></div>
+        <div class="content">
+          <div class="topbar">
+            <div class="brand-name" style="font-size:17px">الإعدادات</div>
+            <div class="icon-btn">؟</div>
+          </div>
+
+          <div class="profile-card">
+            <div class="avatar">👤</div>
+            <div style="flex:1">
+              <div class="profile-name">تروك</div>
+              <div class="profile-mail">trki.orbit@gmail.com</div>
+            </div>
+            <div class="credit">١٠٠</div>
+          </div>
+
+          <div class="group">
+            <div class="group-t">المحتوى الخاص بي</div>
+            <div class="list">
+              <div class="list-item">
+                <div class="li-ico">🦸</div>
+                <div class="li-t">اصنع بطلك</div>
+                <div class="li-c">›</div>
+              </div>
+              <div class="list-item">
+                <div class="li-ico">🎙️</div>
+                <div class="li-t">اروِ بصوتك</div>
+                <div class="li-c">›</div>
+              </div>
+              <div class="list-item">
+                <div class="li-ico">📚</div>
+                <div class="li-t">مكتبتي</div>
+                <div class="li-c">›</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="group">
+            <div class="group-t">الحساب والفوترة</div>
+            <div class="list">
+              <div class="list-item">
+                <div class="li-ico">★</div>
+                <div class="li-t">شحن الكريدت</div>
+                <div class="li-m">١٠٠</div>
+              </div>
+              <div class="list-item">
+                <div class="li-ico">🛍️</div>
+                <div class="li-t">المتجر</div>
+                <div class="li-c">›</div>
+              </div>
+              <div class="list-item">
+                <div class="li-ico">🌐</div>
+                <div class="li-t">اللغة</div>
+                <div class="li-m">العربية</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="group">
+            <div class="group-t">قانوني</div>
+            <div class="list">
+              <div class="list-item">
+                <div class="li-ico">📄</div>
+                <div class="li-t">سياسة الخصوصية</div>
+                <div class="li-c">›</div>
+              </div>
+              <div class="list-item">
+                <div class="li-ico">📋</div>
+                <div class="li-t">الشروط والأحكام</div>
+                <div class="li-c">›</div>
+              </div>
+              <div class="list-item">
+                <div class="li-ico">🚪</div>
+                <div class="li-t" style="color:#ff6a6a">تسجيل الخروج</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="nav-item"><div class="nav-ico">🏠</div>الرئيسية</div>
+          <div class="nav-item"><div class="nav-ico">📚</div>مكتبتي</div>
+          <div class="nav-item"><div class="nav-ico">✨</div>أنشئ</div>
+          <div class="nav-item"><div class="nav-ico">🛍️</div>المتجر</div>
+          <div class="nav-item active"><div class="nav-ico">⚙️</div>الإعدادات</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    الهوية مستخرجة من ملف المشروع <b>الهوية البصرية/hakawati_app_visual_identity_and_ideas.md</b> + <b>hakawati_logo_v1.png</b>.<br>
+    الشاشات تلتزم بحزمة الإقفال: أزرار حقيقية، كريدت أعلى الصفحة، خصم بعد التوليد، مكتبة ملكي/مقفل، لا ربط منتج مادي بكريدت.
+  </div>
+</div>
+</body>
+</html>

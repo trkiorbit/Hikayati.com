@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,36 +20,24 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   Map<String, dynamic>? _savedAvatar;
   String? _savedVoiceId;
   bool _useAvatar = false;
-  bool _useClonedVoice = false; // الصوت المستنسخ أيقونة مستقلة
+  bool _useClonedVoice = false;
   String _selectedStyle = '3d-model';
-  String _selectedVoice = 'alloy'; // خيار الراوي الافتراضي
+  String _selectedVoice = 'echo';
 
   final _libraryService = LibraryService();
-  bool _isLoadingLimit = true;
-  bool _isLimitReached = false;
-  bool _saveToLibrary = true;
+
+  // التكلفة الفعلية: 10 جواهر ثابتة — الأفاتار والصوت مدفوعان مسبقًا
+  static const int _baseCost = 10;
 
   @override
   void initState() {
     super.initState();
     _loadSavedData();
-    _checkStoryLimit();
-  }
-
-  Future<void> _checkStoryLimit() async {
-    final count = await _libraryService.getStoryCount();
-    if (mounted) {
-      setState(() {
-        _isLimitReached = count >= 10;
-        _isLoadingLimit = false;
-      });
-    }
   }
 
   Future<void> _loadSavedData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // جلب الأفاتار من قاعدة البيانات (Supabase) لضمان التحديث اللحظي
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId != null) {
@@ -67,27 +54,50 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
       debugPrint('[StoryCreation] لم يتم العثور على بطل محفوظ: $e');
     }
 
-    // تحميل الصوت المستنسخ
     final voiceId = prefs.getString('cloned_voice_id');
     if (mounted) setState(() => _savedVoiceId = voiceId);
   }
 
-  void _generateStory() {
+  void _generateStory() async {
+    final ageText = _ageController.text.trim();
+    if (ageText.isNotEmpty) {
+      final age = int.tryParse(ageText);
+      if (age == null || age < 3 || age > 12) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('التطبيق مخصص للأطفال من 3 إلى 12 سنة'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
+    final count = await _libraryService.getStoryCount();
+    if (count >= 10) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('مكتبتك ممتلئة. احذف قصة واحدة على الأقل أولاً.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      context.push('/private-library');
+      return;
+    }
+
     final heroName = _nameController.text.trim().isNotEmpty
         ? _nameController.text.trim()
         : 'البطل';
-    final heroAge = _ageController.text.trim().isNotEmpty
-        ? _ageController.text.trim()
-        : '7';
+    final heroAge = ageText.isNotEmpty ? ageText : '7';
     final storyTheme = _themeController.text.trim().isNotEmpty
         ? _themeController.text.trim()
         : 'مغامرة خيالية ومشوقة';
 
     final requestData = {
-      'heroName':
-          _useAvatar ? (_savedAvatar?['name'] ?? heroName) : heroName,
-      'heroAge':
-          _useAvatar ? (_savedAvatar?['age'] ?? heroAge) : heroAge,
+      'heroName': _useAvatar ? (_savedAvatar?['name'] ?? heroName) : heroName,
+      'heroAge': _useAvatar ? (_savedAvatar?['age'] ?? heroAge) : heroAge,
       'heroVisualDescription':
           _useAvatar ? (_savedAvatar?['promptSnippet'] ?? '') : '',
       'useAvatar': _useAvatar,
@@ -96,19 +106,15 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
       'imageStyle': _selectedStyle,
     };
 
-    // التحديد النهائي للصوت
     final voiceChoice =
         _useClonedVoice && _savedVoiceId != null ? 'cloned' : _selectedVoice;
 
     if (mounted) {
-      context.push(
-        '/intro-cinematic',
-        extra: {
-          'requestData': requestData, 
-          'voice': voiceChoice,
-          'saveToLibrary': _saveToLibrary
-        },
-      );
+      context.push('/intro-cinematic', extra: {
+        'requestData': requestData,
+        'voice': voiceChoice,
+        'saveToLibrary': true,
+      });
     }
   }
 
@@ -117,33 +123,20 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
     final hasAvatar = _savedAvatar != null;
     final hasClonedVoice = _savedVoiceId != null;
 
-    // حساب التكلفة الجديدة: الأساسي 20
-    int totalCost = 20;
-    if (_useAvatar) totalCost += 10;
-    if (_useClonedVoice && hasClonedVoice) totalCost += 10;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: AppColors.deepNight,
       appBar: AppBar(
-        title: const Text(
-          'صمّم قصتك',
-          style: TextStyle(
-              color: AppColors.secondary, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF0D1117),
-        foregroundColor: AppColors.secondary,
+        title: const Text('صمّم قصتك',
+            style: TextStyle(
+                color: AppColors.vibrantOrange, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.deepNight,
+        foregroundColor: AppColors.vibrantOrange,
         elevation: 0,
         centerTitle: true,
       ),
-      body: Stack(
-        children: [
-          IgnorePointer(
-            ignoring: _isLimitReached || _isLoadingLimit,
-            child: Opacity(
-              opacity: (_isLimitReached || _isLoadingLimit) ? 0.3 : 1.0,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ── 1) اسم البطل والعمر ──
@@ -151,8 +144,8 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
               children: [
                 Expanded(
                   flex: 2,
-                  child: _buildTextField(_nameController, 'اسم بطل القصة',
-                      Icons.person_outline),
+                  child: _buildTextField(
+                      _nameController, 'اسم بطل القصة', Icons.person_outline),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -163,22 +156,72 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // ── 2) بطل الأفاتار (واضح — يعرض البطل الحقيقي) ──
-            _buildAvatarSection(hasAvatar),
-            const SizedBox(height: 20),
+            // ── 2) بطل الأفاتار ──
+            _buildFeatureCard(
+              icon: hasAvatar ? Icons.face : Icons.add_a_photo,
+              title: hasAvatar ? 'البطل السحري جاهز!' : 'اصنع بطلك أولاً',
+              subtitle: hasAvatar
+                  ? (_useAvatar
+                      ? 'مفعّل — سيظهر البطل في صور القصة'
+                      : 'اضغط لتفعيل البطل في القصة')
+                  : 'لم يتم إنشاء بطل بعد',
+              isActive: _useAvatar,
+              isAvailable: hasAvatar,
+              onTap: hasAvatar
+                  ? () => setState(() => _useAvatar = !_useAvatar)
+                  : () => context.push('/avatar-lab'),
+              onToggle: hasAvatar
+                  ? (v) => setState(() => _useAvatar = v)
+                  : null,
+            ),
+            const SizedBox(height: 12),
 
-            // ── 3) مربع الراوي + أيقونة الصوت المستنسخ في نفس الصف ──
-            _buildVoiceSection(hasClonedVoice),
-            const SizedBox(height: 20),
+            // ── 3) الصوت المستنسخ ──
+            _buildFeatureCard(
+              icon: hasClonedVoice ? Icons.record_voice_over : Icons.mic_none,
+              title: hasClonedVoice
+                  ? 'صوتك المستنسخ جاهز!'
+                  : 'استنسخ صوتك أولاً',
+              subtitle: hasClonedVoice
+                  ? (_useClonedVoice
+                      ? 'مفعّل — القصة ستُروى بصوتك'
+                      : 'اضغط لتفعيل صوتك في القصة')
+                  : 'لم يتم إنشاء صوت مستنسخ بعد',
+              isActive: _useClonedVoice,
+              isAvailable: hasClonedVoice,
+              onTap: hasClonedVoice
+                  ? () => setState(() => _useClonedVoice = !_useClonedVoice)
+                  : () => context.push('/voice-clone'),
+              onToggle: hasClonedVoice
+                  ? (v) => setState(() => _useClonedVoice = v)
+                  : null,
+            ),
+
+            // ── صوت الراوي (يظهر فقط إذا الصوت المستنسخ غير مفعّل) ──
+            if (!_useClonedVoice) ...[
+              const SizedBox(height: 16),
+              _buildDropdown(
+                label: 'صوت الراوي',
+                icon: Icons.record_voice_over_outlined,
+                value: _selectedVoice,
+                items: const {
+                  'echo': 'رجالي قصصي',
+                  'fable': 'نسائي',
+                  'onyx': 'رجالي عميق',
+                },
+                onChanged: (v) => setState(() => _selectedVoice = v!),
+              ),
+            ],
+            const SizedBox(height: 16),
 
             // ── 4) موضوع القصة ──
             _buildTextField(
                 _themeController,
                 'موضوع القصة (مثال: الشجاعة، الفضاء، الحيوانات)',
                 Icons.auto_stories_outlined),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // ── 5) النمط البصري ──
             _buildDropdown(
@@ -186,284 +229,228 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
               icon: Icons.palette_outlined,
               value: _selectedStyle,
               items: const {
-                '3d-model': 'رسوم متحركة 3D  (بيكسار)',
+                '3d-model': 'رسوم متحركة 3D (بيكسار)',
                 'anime': 'أنمي ياباني',
                 'digital-art': 'فن رقمي',
                 'pixel-art': 'بيكسل آرت',
               },
               onChanged: (v) => setState(() => _selectedStyle = v!),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            // ── 6) زر التوليد ──
-            ElevatedButton.icon(
+            // ── 6) ملخص التكلفة ──
+            _buildPricingBreakdown(),
+            const SizedBox(height: 16),
+
+            // ── 7) زر التوليد ──
+            ElevatedButton(
               onPressed: _generateStory,
-              icon: const Icon(Icons.auto_awesome, size: 24),
-              label: Text(
-                'اصنع السحر!  •  $totalCost 💎',
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold),
-              ),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.secondary,
+                backgroundColor: AppColors.vibrantOrange,
+                foregroundColor: AppColors.deepNight,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
               ),
-            ),
-          ],
-        ),
-      ),
-            ),
-          ),
-          if (_isLoadingLimit)
-            const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
-          if (_isLimitReached && !_isLoadingLimit)
-            Container(
-              color: Colors.black.withOpacity(0.6),
-              alignment: Alignment.center,
-              child: _buildLimitOverlay(),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLimitOverlay() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C2333),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.secondary, width: 2),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 60),
-          const SizedBox(height: 16),
-          const Text(
-            'وصلت للحد الأقصى!',
-            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'مكتبتك الخاصة ممتلئة (10 قصص). لا يمكنك حفظ قصة جديدة إلا باستبدال قصة قديمة، أو يمكنك الاستمرار في توليد المشاهدة فقط دون حفظ.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                setState(() {
-                  _isLimitReached = false;
-                  _saveToLibrary = true;
-                });
-              },
-              child: const Text('متابعة لاستبدال قصة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.redAccent),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                setState(() {
-                  _isLimitReached = false;
-                  _saveToLibrary = false;
-                });
-              },
-              child: const Text('توليد للمشاهدة فقط (بدون حفظ)', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () => context.pop(),
-            child: const Text('إلغاء والعودة', style: TextStyle(color: Colors.white54, fontSize: 16)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── قسم الأفاتار ──
-  Widget _buildAvatarSection(bool hasAvatar) {
-    return GestureDetector(
-      onTap: hasAvatar
-          ? () => setState(() => _useAvatar = !_useAvatar)
-          : () => context.push('/avatar-lab'),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _useAvatar
-              ? const Color(0xFF2D3748) // لون صلب بدلاً من شفافية
-              : const Color(0xFF1C2333),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _useAvatar
-                ? AppColors.secondary
-                : const Color(0xFF4A5568),
-            width: _useAvatar ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            // أيقونة / صورة الأفاتار
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: hasAvatar ? AppColors.secondary : const Color(0xFF4A5568),
-              ),
-              child: Icon(
-                hasAvatar ? Icons.face : Icons.add_a_photo,
-                color: hasAvatar ? AppColors.deepBlack : Colors.white,
-                size: 30,
-              ),
-            ),
-            const SizedBox(width: 16),
-            // معلومات الأفاتار
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    hasAvatar
-                        ? 'البطل السحري جاهز!'
-                        : 'اضغط لصناعة بطلك',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white, // أبيض صريح
+                  const Icon(Icons.auto_awesome, size: 24),
+                  const SizedBox(width: 10),
+                  const Text('اصنع السحر!',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.deepNight.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    hasAvatar
-                        ? (_useAvatar
-                            ? '✅ مفعّل — سيظهر البطل في الصور'
-                            : 'اضغط للتفعيل')
-                        : 'لم يتم إنشاء بطل بعد',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _useAvatar
-                          ? Colors.greenAccent
-                          : Colors.grey[400],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('$_baseCost',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.stars, size: 18),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            // Toggle
-            if (hasAvatar)
-              Switch(
-                value: _useAvatar,
-                activeColor: AppColors.secondary,
-                onChanged: (v) => setState(() => _useAvatar = v),
-              ),
           ],
         ),
       ),
     );
   }
 
-  // ── قسم الصوت: راوي + أيقونة الصوت المستنسخ ──
-  Widget _buildVoiceSection(bool hasClonedVoice) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // قائمة الراوي — تُقفل عند تفعيل الصوت المستنسخ
-        Expanded(
-          child: IgnorePointer(
-            ignoring: _useClonedVoice,
-            child: Opacity(
-              opacity: _useClonedVoice ? 0.4 : 1.0,
-              child: _buildDropdown(
-                label: 'صوت الراوي',
-                icon: Icons.record_voice_over_outlined,
-                value: _selectedVoice,
-                items: const {
-                  'alloy': 'راوي (متوازن)',
-                  'shimmer': 'راوية (ناعمة)',
-                  'onyx': 'راوي (عميق)',
-                },
-                onChanged: (v) => setState(() => _selectedVoice = v!),
-              ),
-            ),
+  // ── بطاقة ميزة موحّدة (أفاتار / صوت) ──
+  Widget _buildFeatureCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isActive,
+    required bool isAvailable,
+    required VoidCallback onTap,
+    ValueChanged<bool>? onToggle,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppColors.vibrantOrange.withValues(alpha: 0.08)
+              : AppColors.cardSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isActive
+                ? AppColors.vibrantOrange
+                : Colors.white.withValues(alpha: 0.08),
+            width: isActive ? 2 : 1,
           ),
         ),
-        const SizedBox(width: 12),
-
-        // أيقونة الصوت المستنسخ المستقلة
-        GestureDetector(
-          onTap: () {
-            if (!hasClonedVoice) {
-              context.push('/voice-clone');
-            } else {
-              setState(() => _useClonedVoice = !_useClonedVoice);
-            }
-          },
-          child: Tooltip(
-            message: hasClonedVoice
-                ? (_useClonedVoice
-                    ? 'صوتك مفعّل — اضغط للإلغاء'
-                    : 'اضغط لاستخدام صوتك المستنسخ')
-                : 'اضغط لإعداد صوتك أولاً',
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 60,
-              height: 60,
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _useClonedVoice
-                    ? AppColors.secondary
-                    : (hasClonedVoice
-                        ? const Color(0xFF1C2333)
-                        : Colors.grey[850]),
-                border: Border.all(
-                  color: _useClonedVoice
-                      ? AppColors.primary
-                      : (hasClonedVoice
-                          ? AppColors.secondary
-                          : Colors.grey.shade700),
-                  width: 2,
-                ),
+                color: isAvailable
+                    ? (isActive
+                        ? AppColors.vibrantOrange
+                        : AppColors.vibrantOrange.withValues(alpha: 0.15))
+                    : Colors.white.withValues(alpha: 0.06),
               ),
-              child: Icon(
-                Icons.mic,
-                color: _useClonedVoice
-                    ? AppColors.primary
-                    : (hasClonedVoice
-                        ? AppColors.secondary
-                        : Colors.grey[600]),
-                size: 26,
+              child: Icon(icon,
+                  color: isAvailable
+                      ? (isActive ? AppColors.deepNight : AppColors.vibrantOrange)
+                      : Colors.grey,
+                  size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.glassWhite)),
+                  const SizedBox(height: 3),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: isActive
+                              ? Colors.greenAccent
+                              : Colors.grey[400])),
+                ],
               ),
             ),
-          ),
+            if (onToggle != null)
+              Switch(
+                value: isActive,
+                activeColor: AppColors.vibrantOrange,
+                onChanged: onToggle,
+              )
+            else
+              Icon(Icons.arrow_forward_ios,
+                  size: 14, color: Colors.grey[600]),
+          ],
         ),
+      ),
+    );
+  }
+
+  // ── ملخص التكلفة ──
+  Widget _buildPricingBreakdown() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.vibrantOrange.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        children: [
+          _pricingRow(Icons.auto_stories, 'القصة (نص + صور + صوت)', cost: _baseCost),
+          if (_useAvatar)
+            _pricingRow(Icons.face, 'البطل (الأفاتار)', included: true),
+          if (_useClonedVoice)
+            _pricingRow(Icons.record_voice_over, 'الصوت المستنسخ', included: true),
+          Divider(color: AppColors.vibrantOrange.withValues(alpha: 0.2), height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('الإجمالي',
+                  style: TextStyle(
+                      color: AppColors.glassWhite,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
+              _gemBadge(_baseCost, large: true),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pricingRow(IconData icon, String label,
+      {int? cost, bool included = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon,
+              size: 16,
+              color: included ? Colors.greenAccent : Colors.grey[500]),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+          ),
+          if (included)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.greenAccent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text('مُضمّن',
+                  style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
+            )
+          else if (cost != null)
+            _gemBadge(cost),
+        ],
+      ),
+    );
+  }
+
+  /// شارة الجواهر الموحّدة — نفس أيقونة النجمة الذهبية في AppBar
+  Widget _gemBadge(int amount, {bool large = false}) {
+    final fontSize = large ? 16.0 : 13.0;
+    final iconSize = large ? 18.0 : 14.0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('$amount',
+            style: TextStyle(
+                color: AppColors.vibrantOrange,
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize)),
+        const SizedBox(width: 3),
+        Icon(Icons.stars, color: AppColors.vibrantOrange, size: iconSize),
       ],
     );
   }
 
-  // ── حقل إدخال موحّد بنمط داكن ──
   Widget _buildTextField(
       TextEditingController ctrl, String label, IconData icon,
       {bool isNumber = false}) {
@@ -474,23 +461,21 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: Icon(icon, color: AppColors.secondary, size: 20),
+        prefixIcon: Icon(icon, color: AppColors.vibrantOrange, size: 20),
         filled: true,
-        fillColor: const Color(0xFF1C2333),
+        fillColor: AppColors.cardSurface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.secondary, width: 2),
+          borderSide: const BorderSide(color: AppColors.vibrantOrange, width: 2),
         ),
       ),
     );
   }
 
-  // ── قائمة منسدلة موحّدة بنمط داكن ──
   Widget _buildDropdown({
     required String label,
     required IconData icon,
@@ -500,29 +485,28 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      dropdownColor: const Color(0xFF1C2333),
+      dropdownColor: AppColors.cardSurface,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: Icon(icon, color: AppColors.secondary, size: 20),
+        prefixIcon: Icon(icon, color: AppColors.vibrantOrange, size: 20),
         filled: true,
-        fillColor: const Color(0xFF1C2333),
+        fillColor: AppColors.cardSurface,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.secondary, width: 2),
+          borderSide: const BorderSide(color: AppColors.vibrantOrange, width: 2),
         ),
       ),
       items: items.entries
           .map((e) => DropdownMenuItem(
               value: e.key,
-              child: Text(e.value,
-                  style: const TextStyle(color: Colors.white))))
+              child:
+                  Text(e.value, style: const TextStyle(color: Colors.white))))
           .toList(),
       onChanged: onChanged,
     );

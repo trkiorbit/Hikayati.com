@@ -11,7 +11,7 @@ class AvatarService {
     }
 
     await _client.from('profiles').update({
-      'avatar_data': avatarData,
+      'avatar_profile_summary': avatarData,
     }).eq('user_id', userId);
   }
 
@@ -21,12 +21,12 @@ class AvatarService {
 
     final response = await _client
         .from('profiles')
-        .select('avatar_data')
+        .select('avatar_profile_summary')
         .eq('user_id', userId)
         .maybeSingle();
 
-    if (response != null && response['avatar_data'] != null) {
-      return response['avatar_data'] as Map<String, dynamic>;
+    if (response != null && response['avatar_profile_summary'] != null) {
+      return response['avatar_profile_summary'] as Map<String, dynamic>;
     }
     return null;
   }
