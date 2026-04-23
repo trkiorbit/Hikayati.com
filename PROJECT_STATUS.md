@@ -1,47 +1,121 @@
 # PROJECT STATUS — حكواتي
 **آخر تحديث:** 2026-04-23
-**المرحلة الحالية:** دفعة ٦ — ما قبل الدفع
+**المرحلة الحالية:** Phase 1 — App Launch Core Lock (بدء)
 
 ---
 
-## الوضع الآن
+## النظام المرحلي المعتمد (7 Phases)
 
-| الدفعة | الاسم | الحالة |
-|---|---|---|
-| 1 | إقفال الأفاتار | ✅ مكتمل |
-| 2 | إقفال الصوت | ✅ مكتمل |
-| 3 | إقفال الكريدت | ✅ مكتمل |
-| 4 | إقفال المكتبات | ✅ مكتمل |
-| 5 | توحيد الهوية + ⭐ + أحمر/أخضر | ✅ مكتمل — commit: 38f8bc4 |
-| 6 | المتجر الداخلي (IAP) | ⏳ ينتظر الراتب |
-| 7 | الإطلاق App Store + Play | ⏳ بعد IAP |
-
----
-
-## آخر commit
-
-```
-38f8bc4 — Credit Currency Lock + Remove Included + Dynamic Total
-Tag: before_payment_credit_currency_lock
-```
+| Phase | الاسم | الحالة | Restore Point |
+|---|---|---|---|
+| 1 | App Launch Core Lock | 🟡 قيد التنفيذ | `rp-01-launch-core-lock` |
+| 2 | Internal Commerce Readiness | ⏳ تنتظر Phase 1 | `rp-02-internal-commerce-readiness` |
+| 3 | External Store Build on Hostinger | ⏳ تنتظر Phase 2 | `rp-03-hostinger-store-build` |
+| 4 | Orders + Invoices + Redeem Automation | ⏳ يمكن التوازي مع 3 | `rp-04-orders-invoices-redeem` |
+| 5 | Marketing + Legal Lock | ⏳ تنتظر 3+4 | `rp-05-marketing-legal-lock` |
+| 6 | Paid Activations After Salary | ⏳ بعد الراتب | `rp-06-paid-activations` |
+| 7 | Final Launch Ops | ⏳ بعد Phase 6 | `rp-07-final-launch-ops` |
 
 ---
 
-## القرارات المقفلة
+## المرجع الرئيسي
 
-- كروت الكريدت الخارجية: **موثّقة** في `خطة_المشروع/متجر_حكواتي_الخارجي.md`
-- الاستبدال يتم داخل التطبيق عبر كود 12 خانة → يضيف credits مباشرة في Supabase
-- لا ربط مباشر بين "متجر hikayati.com" وميزة رقمية داخل التطبيق (Apple Policy)
-- Moyasar أولاً للمتجر الخارجي، IAP للمتجر الداخلي
+- **الخطة النهائية:** `خطة_المشروع/خطة_الإطلاق_السريع_النهائية.md`
+- **خطة التنفيذ:** `خطة_المشروع/خطة_تنفيذ_كلود_المرحلية.md`
+- **نقاط الاستعادة:** `خطة_المشروع/نقاط_الاستعادة_المعتمدة.md`
 
 ---
 
-## المعلّق لحل خارجي
+## القرارات المقفلة (لا تُناقش مرة أخرى)
 
-| البند | المسؤول | الموعد |
-|---|---|---|
-| ElevenLabs فاتورة | تروك | الاثنين |
-| Apple Developer اشتراك | تروك | بعد الراتب |
-| Moyasar تسجيل | تروك | بعد الراتب |
-| صور منتجات المتجر (5 تيشيرت + 3 كتيب) | تروك | قبل إطلاق المتجر |
+- التطبيق Flutter — كما هو
+- Backend Supabase — كما هو
+- المتجر الخارجي: **Hostinger Premium + HTML/CSS/JS/PHP + Supabase**
+- **لا نستخدم:** سلة / Next.js server / أي SaaS خارجي
+- الدومين: hikayati.com (مملوك)
+- الإطلاق السريع يشمل: التطبيق + الكريدت + المكتبة + الكتيب + المجلة + كروت الكريدت + الطلبات + الفواتير + البريد + الأتمتة + الصفحات القانونية
+- الصياغة في التطبيق: "منتجات حكواتي" — بدون ذكر كريدت في الربط الخارجي
 
+---
+
+## الـ Dفعات القديمة (7 Batches) — ملغاة لصالح 7 Phases الجديدة
+
+| Batch قديم | Phase المقابلة |
+|---|---|
+| 1-5 (أفاتار/صوت/رصيد/مكتبات/هوية) | Phase 1 (مُغلقة بالفعل تقنياً) |
+| 6 (متجر داخلي) | Phase 2 + Phase 6 |
+| 7 (إطلاق) | Phase 7 |
+
+---
+
+## الحالة التقنية الحالية
+
+### ما هو جاهز 100%
+- Auth + Session persistence + refresh + valid check
+- Credit realtime display
+- Anti-double deduction
+- Private library (no deduction)
+- Public library + unlock
+- Avatar system (vision + 4 options + prompt_snippet)
+- Standard voice (Pollinations)
+- Cinema (audio_url only)
+- Visual identity + ⭐ + red/green/orange
+- Dynamic pricing (10/10/20 ⭐)
+- 4 legal pages in app
+- Consent dialogs
+
+### ما هو ناقص (سيُبنى في Phases 2-4)
+- Redeem card screen (Phase 2)
+- Orders screen (Phase 2)
+- External store hikayati.com (Phase 3)
+- Supabase tables: orders, invoices, credit_cards (Phase 4)
+- Edge Functions: webhook, redeem, invoice, email (Phase 4)
+- Email templates (Phase 4)
+- 5 dem stories + product images (Phase 5)
+- Legal pages on hikayati.com (Phase 5)
+
+### ما هو مؤجل (فقط بسبب دفع/تفعيل خارجي)
+- Apple Developer Program ($99/سنة)
+- Google Play Console ($25)
+- IAP live activation
+- ElevenLabs billing (يوم الاثنين)
+- Moyasar/Tap live
+- Print partner account
+- Resend/Brevo API key
+
+---
+
+## Audit Findings — 2026-04-23
+
+### Git State
+- **HEAD**: `41acf97` — detached from `627e6cc`
+- **main (local + origin)**: `ec490d3` (قديم — commits آخر جلستين غير موجودة عليه)
+- **Tags**:
+  - `before_store` → `41acf97` ✅ على GitHub
+  - `before_payment_credit_currency_lock` → `38f8bc4` ✅ محلي
+- **Commits آخر جلستين غير موجودة على أي branch** — محفوظة فقط كأهداف tags
+- **Phase 1 Batch 001 سيحل هذا** (fast-forward merge)
+
+### Login Flow Root Cause
+- **ليس bug** — سلوك UX صحيح
+- Supabase SDK يحفظ الجلسة تلقائياً في `shared_preferences` (50%)
+- `main.dart:19-28` يُجدّد الجلسة عند boot (30%)
+- `app_router.dart:37-59` يتحقق من `expiresAt` ويُوجّه (20%)
+- لا يوجد splash screen — الـ router redirect هو الـ gate
+
+### Blockers قبل الإطلاق
+1. Git: دمج commits إلى main (Phase 1 batch-001)
+2. IAP: مؤجل بالدفع (Phase 6)
+3. ElevenLabs: فاتورة معلّقة (حل الاثنين)
+4. Google Sign-In: `webClientId = null` — قرار: تعطيل رسمي (Phase 1 batch-002)
+
+---
+
+## الخطوة التالية
+
+**Batch 001:** Phase 1 Git Consolidation
+- دمج `41acf97` إلى `main`
+- حذف 7 branches احتياطية قديمة
+- 15 دقيقة فقط
+
+**للمتابعة:** اطلب تنفيذ `batch-001-phase1-git-consolidation`.
