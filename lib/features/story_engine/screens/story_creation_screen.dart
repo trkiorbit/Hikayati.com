@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
 import 'package:hikayati/features/library/services/library_service.dart';
 
+enum CreditBadgeType { deduction, addition, balance }
+
 class StoryCreationScreen extends StatefulWidget {
   const StoryCreationScreen({super.key});
 
@@ -26,8 +28,17 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
 
   final _libraryService = LibraryService();
 
-  // التكلفة الفعلية: 10 جواهر ثابتة — الأفاتار والصوت مدفوعان مسبقًا
-  static const int _baseCost = 10;
+  // التكلفة الفعلية (تطابق generate_story_use_case.dart)
+  static const int _baseStoryCost = 10;
+  static const int _avatarUsageCost = 10;
+  static const int _clonedVoiceUsageCost = 20;
+
+  int get _totalCost {
+    int total = _baseStoryCost;
+    if (_useAvatar) total += _avatarUsageCost;
+    if (_useClonedVoice) total += _clonedVoiceUsageCost;
+    return total;
+  }
 
   @override
   void initState() {
@@ -259,7 +270,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                   const SizedBox(width: 10),
                   const Text('اصنع السحر!',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -269,8 +280,9 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('$_baseCost',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('-$_totalCost',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
                         const SizedBox(width: 3),
                         const Icon(Icons.stars, size: 18),
                       ],
@@ -377,12 +389,13 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
       ),
       child: Column(
         children: [
-          _pricingRow(Icons.auto_stories, 'القصة (نص + صور + صوت)', cost: _baseCost),
+          _pricingRow(Icons.auto_stories, 'القصة الأساسية', _baseStoryCost),
           if (_useAvatar)
-            _pricingRow(Icons.face, 'البطل (الأفاتار)', included: true),
+            _pricingRow(Icons.face, 'الأفاتار', _avatarUsageCost),
           if (_useClonedVoice)
-            _pricingRow(Icons.record_voice_over, 'الصوت المستنسخ', included: true),
-          Divider(color: AppColors.vibrantOrange.withValues(alpha: 0.2), height: 20),
+            _pricingRow(
+                Icons.record_voice_over, 'الصوت المستنسخ', _clonedVoiceUsageCost),
+          Divider(color: AppColors.vibrantOrange.withValues(alpha: 0.25), height: 22),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -391,7 +404,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                       color: AppColors.glassWhite,
                       fontWeight: FontWeight.bold,
                       fontSize: 16)),
-              _gemBadge(_baseCost, large: true),
+              _creditBadge(-_totalCost, type: CreditBadgeType.deduction, large: true),
             ],
           ),
         ],
@@ -399,54 +412,54 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
     );
   }
 
-  Widget _pricingRow(IconData icon, String label,
-      {int? cost, bool included = false}) {
+  Widget _pricingRow(IconData icon, String label, int cost) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          Icon(icon,
-              size: 16,
-              color: included ? Colors.greenAccent : Colors.grey[500]),
+          Icon(icon, size: 16, color: Colors.grey[500]),
           const SizedBox(width: 8),
           Expanded(
             child: Text(label,
                 style: TextStyle(color: Colors.grey[400], fontSize: 13)),
           ),
-          if (included)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.greenAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text('مُضمّن',
-                  style: TextStyle(
-                      color: Colors.greenAccent,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold)),
-            )
-          else if (cost != null)
-            _gemBadge(cost),
+          _creditBadge(-cost, type: CreditBadgeType.deduction),
         ],
       ),
     );
   }
 
-  /// شارة الجواهر الموحّدة — نفس أيقونة النجمة الذهبية في AppBar
-  Widget _gemBadge(int amount, {bool large = false}) {
+  /// شارة الكريدت الموحّدة — نفس النجمة الذهبية في كل التطبيق
+  /// Red للخصم، Green للإضافة، Orange للرصيد الحالي
+  Widget _creditBadge(int amount,
+      {required CreditBadgeType type, bool large = false}) {
     final fontSize = large ? 16.0 : 13.0;
     final iconSize = large ? 18.0 : 14.0;
+
+    final Color color;
+    switch (type) {
+      case CreditBadgeType.deduction:
+        color = const Color(0xFFFF5252);
+        break;
+      case CreditBadgeType.addition:
+        color = const Color(0xFF4CAF50);
+        break;
+      case CreditBadgeType.balance:
+        color = AppColors.vibrantOrange;
+        break;
+    }
+
+    final sign = amount > 0 ? '+' : '';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$amount',
+        Text('$sign$amount',
             style: TextStyle(
-                color: AppColors.vibrantOrange,
+                color: color,
                 fontWeight: FontWeight.bold,
                 fontSize: fontSize)),
         const SizedBox(width: 3),
-        Icon(Icons.stars, color: AppColors.vibrantOrange, size: iconSize),
+        Icon(Icons.stars, color: color, size: iconSize),
       ],
     );
   }

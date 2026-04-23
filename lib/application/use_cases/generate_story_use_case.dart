@@ -94,8 +94,14 @@ class GenerateStoryUseCase {
     }
     _isGenerating = true;
 
-    // التكلفة الأساسية للقصة هي 10 كريدت حسب طلب المستخدم
-    int totalCost = 10;
+    // التكلفة: أساس 10 + 10 عند استخدام الأفاتار + 20 عند استخدام الصوت المستنسخ
+    const int baseStoryCost = 10;
+    const int avatarUsageCost = 10;
+    const int clonedVoiceUsageCost = 20;
+
+    int totalCost = baseStoryCost;
+    if (requestData['useAvatar'] == true) totalCost += avatarUsageCost;
+    if (voice == 'cloned') totalCost += clonedVoiceUsageCost;
 
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) throw Exception('يجب تسجيل الدخول أولاً.');

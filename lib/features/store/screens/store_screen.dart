@@ -203,7 +203,7 @@ class _StoreScreenState extends State<StoreScreen> {
               ),
               const SizedBox(width: 14),
 
-              // اسم + جواهر
+              // اسم + رصيد (أخضر = إضافة)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,16 +234,17 @@ class _StoreScreenState extends State<StoreScreen> {
                       ],
                     ),
                     const SizedBox(height: 4),
+                    // الإضافة بالأخضر
                     Row(
                       children: [
-                        Text('$gems',
-                            style: TextStyle(
-                                color: AppColors.vibrantOrange,
+                        Text('+$gems',
+                            style: const TextStyle(
+                                color: Color(0xFF4CAF50),
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold)),
                         const SizedBox(width: 3),
-                        Icon(Icons.stars,
-                            color: AppColors.vibrantOrange, size: 16),
+                        const Icon(Icons.stars,
+                            color: Color(0xFF4CAF50), size: 16),
                       ],
                     ),
                   ],
