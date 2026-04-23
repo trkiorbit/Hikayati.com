@@ -180,6 +180,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                   : 'لم يتم إنشاء بطل بعد',
               isActive: _useAvatar,
               isAvailable: hasAvatar,
+              usageCost: _avatarUsageCost,
               onTap: hasAvatar
                   ? () => setState(() => _useAvatar = !_useAvatar)
                   : () => context.push('/avatar-lab'),
@@ -202,6 +203,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                   : 'لم يتم إنشاء صوت مستنسخ بعد',
               isActive: _useClonedVoice,
               isAvailable: hasClonedVoice,
+              usageCost: _clonedVoiceUsageCost,
               onTap: hasClonedVoice
                   ? () => setState(() => _useClonedVoice = !_useClonedVoice)
                   : () => context.push('/voice-clone'),
@@ -304,6 +306,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
     required String subtitle,
     required bool isActive,
     required bool isAvailable,
+    required int usageCost,
     required VoidCallback onTap,
     ValueChanged<bool>? onToggle,
   }) {
@@ -348,11 +351,56 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.glassWhite)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(title,
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.glassWhite)),
+                      ),
+                      // شارة التكلفة — تظهر فقط إذا الميزة متاحة
+                      if (isAvailable)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? const Color(0xFFFF5252).withValues(alpha: 0.15)
+                                : Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isActive
+                                  ? const Color(0xFFFF5252).withValues(alpha: 0.5)
+                                  : Colors.white.withValues(alpha: 0.08),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '-$usageCost',
+                                style: TextStyle(
+                                  color: isActive
+                                      ? const Color(0xFFFF5252)
+                                      : Colors.grey[400],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(Icons.stars,
+                                  size: 12,
+                                  color: isActive
+                                      ? const Color(0xFFFF5252)
+                                      : Colors.grey[400]),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 3),
                   Text(subtitle,
                       style: TextStyle(
@@ -363,6 +411,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             if (onToggle != null)
               Switch(
                 value: isActive,
