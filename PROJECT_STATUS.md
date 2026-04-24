@@ -1,6 +1,6 @@
 # PROJECT STATUS — حكواتي
-**آخر تحديث:** 2026-04-23
-**المرحلة الحالية:** Phase 1 — App Launch Core Lock (بدء)
+**آخر تحديث:** 2026-04-24
+**المرحلة الحالية:** Phase 1 — Code مُقفل ✅ | إنتاج محتوى المكتبة العامة ⏳ (يحتاج تنفيذ بشري)
 
 ---
 
@@ -118,14 +118,28 @@
 | `batch-001-phase1-git-consolidation` | ✅ مُغلقة (2026-04-24) | main تحرّك إلى `1d23c95`، HEAD ليست detached، 5 branches محذوفة |
 | `batch-002-phase1-auth-decisions` | ✅ مُغلقة (2026-04-24) | Eager profile + Google Sign-In disabled |
 | `batch-002b-initial-credits-adjustment` | ✅ مُغلقة (2026-04-24) | رصيد البداية: 100 → 20 ⭐ |
-| `batch-003-phase1-4-paths-verification` | ⏳ التالية | اختبار يدوي للمسارات الأربعة |
+| `batch-003c-avatar-credit-clarity` | ✅ مُغلقة (2026-04-24) | شارات الكرت واضحة + ألوان صحيحة |
+| `batch-003d-public-library-premium-mode` | ✅ مُغلقة (2026-04-24) | Config + 6 scenes + imageEnhancer + قيود تلقائية |
+| `batch-004-public-library-content-verification` | ⚠️ Code done, content pending | Audit PASS، SQL draft جاهز، 0 قصص منتجة |
+
+## Restore Points الحالية
+
+| Tag | Commit | الحالة |
+|---|---|---|
+| `before_store` | `41acf97` | ✅ GitHub |
+| `before_payment_credit_currency_lock` | `38f8bc4` | محلي |
+| `before_public_library_premium_generation` | `1d23c95` | محلي |
+| `before_public_library_content_verification` | `a371539` | ✅ GitHub |
 
 ## الخطوة التالية
 
-**Batch 003:** Phase 1 — 4 Paths Verification (اختبار يدوي فقط)
-- المسار 1: إنشاء قصة عادية → -10 ⭐
-- المسار 2: قصة + أفاتار → -20 ⭐
-- المسار 3: فتح قصة خاصة → صفر خصم
-- المسار 4: فتح قصة عامة جديدة → -10 ⭐
+**ليست الدفع.** يحتاج أولاً:
 
-**بعد نجاحها:** إنشاء `rp-01-launch-core-lock` tag والانتقال إلى Phase 2.
+1. **إنتاج 5 قصص المكتبة العامة يدوياً** (راجع `PUBLIC_LIBRARY_CLOSURE_REPORT.md` قسم 11)
+2. **تنفيذ ALTER TABLE migration** في Supabase:
+   `supabase/migrations/draft_add_public_stories_content_columns.sql`
+3. **نقل القصص** إلى `public_stories` عبر SQL
+4. **اختبار end-to-end** بحساب مستخدم جديد
+5. **ثم** نبدأ Phase 2 — Payment Readiness
+
+**التقرير الكامل:** `PUBLIC_LIBRARY_CLOSURE_REPORT.md`
