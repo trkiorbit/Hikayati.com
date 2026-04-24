@@ -1,0 +1,137 @@
+{
+  "_comment_purpose": "Central catalog tracking all public library stories — status, QC, and import readiness",
+  "_comment_usage": "Update this file every time a story advances in the production pipeline",
+
+  "version": "1.0",
+  "last_updated": "2026-04-25",
+  "total_stories_planned": 8,
+  "total_stories_imported": 0,
+
+  "statuses_legend": {
+    "idea": "تم اختيار القصة — لم يبدأ الإنتاج",
+    "script_ready": "Story Bible + Character Bible + Final Script جاهزة — في انتظار الصور",
+    "reference_approved": "صورة الشخصية المرجعية منتجة ومعتمدة",
+    "scenes_in_progress": "بعض صور المشاهد منتجة",
+    "scenes_complete": "كل الصور جاهزة",
+    "audio_in_progress": "إنتاج الصوت جارٍ",
+    "audio_complete": "كل الصوتيات جاهزة",
+    "assets_uploaded": "الأصول مرفوعة لـ Supabase Storage",
+    "qc_pending": "في انتظار QC",
+    "qc_passed": "QC مرّرت ✅",
+    "imported": "منقولة إلى public_stories في Supabase"
+  },
+
+  "stories": [
+    {
+      "slug": "layla_wolf",
+      "title": "ليلى والذئب الذكي",
+      "status": "script_ready",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "pending",
+      "category": "مغامرات",
+      "price_credits": 10,
+      "voice_type": "echo",
+      "production_phase": {
+        "story_bible": "done",
+        "character_bibles": "done",
+        "final_script": "done",
+        "scene_sheet": "done",
+        "image_prompts": "done",
+        "reference_image": "pending",
+        "scene_images": "pending",
+        "audio_files": "pending",
+        "supabase_upload": "pending",
+        "qc": "pending",
+        "import": "pending"
+      },
+      "notes": "waiting for base character reference image generation via Midjourney v6+",
+      "public_story_id": null,
+      "created_at": "2026-04-25",
+      "updated_at": "2026-04-25"
+    },
+    {
+      "slug": "forest_race",
+      "title": "سباق الغابة الكبير",
+      "status": "idea",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "not_started",
+      "category": "مغامرات",
+      "notes": "التالية بعد نجاح ليلى والذئب",
+      "public_story_id": null
+    },
+    {
+      "slug": "wishes_lamp",
+      "title": "مصباح الأمنيات",
+      "status": "idea",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "not_started",
+      "category": "خيال",
+      "notes": "",
+      "public_story_id": null
+    },
+    {
+      "slug": "glass_shoe",
+      "title": "الحذاء الزجاجي المفقود",
+      "status": "idea",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "not_started",
+      "category": "خيال",
+      "notes": "",
+      "public_story_id": null
+    },
+    {
+      "slug": "magic_cave",
+      "title": "باب الكهف السحري",
+      "status": "idea",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "not_started",
+      "category": "مغامرات",
+      "notes": "",
+      "public_story_id": null
+    },
+    {
+      "slug": "seed_clouds",
+      "title": "البذرة التي وصلت للغيوم",
+      "status": "idea",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "not_started",
+      "category": "تعليمية",
+      "notes": "",
+      "public_story_id": null
+    },
+    {
+      "slug": "golden_pond",
+      "title": "سرّ البركة الذهبية",
+      "status": "idea",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "not_started",
+      "category": "خيال",
+      "notes": "",
+      "public_story_id": null
+    },
+    {
+      "slug": "forest_mirror",
+      "title": "مرآة الغابة القديمة",
+      "status": "idea",
+      "target_scene_count": 6,
+      "imported_to_supabase": false,
+      "qc_status": "not_started",
+      "category": "خيال",
+      "notes": "",
+      "public_story_id": null
+    }
+  ],
+
+  "_launch_target": {
+    "minimum_stories_for_launch": 5,
+    "recommended_first_imports": ["layla_wolf", "forest_race", "wishes_lamp", "seed_clouds", "forest_mirror"],
+    "comment": "لا تطلق المكتبة العامة بأقل من 5 قصص جودة ممتازة"
+  }
+}

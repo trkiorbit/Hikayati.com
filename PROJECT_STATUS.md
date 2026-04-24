@@ -1,6 +1,62 @@
 # PROJECT STATUS — حكواتي
-**آخر تحديث:** 2026-04-24
-**المرحلة الحالية:** Phase 1 — Code مُقفل ✅ | إنتاج محتوى المكتبة العامة ⏳ (يحتاج تنفيذ بشري)
+**آخر تحديث:** 2026-04-25
+**المرحلة الحالية:** Phase 1 ✅ | قصة ليلى ✅ صور + نص + ربط محلي | ⏳ تنتظر توليد الصوت
+
+---
+
+## 🎯 الحالة الحقيقية الآن (Snapshot)
+
+### ما هو مُكتمل 100%
+- ✅ Code كامل التطبيق (Auth، Credits، Libraries، Cinema، Avatar، Voice، Store UI)
+- ✅ Content Studio خارجي بـ 7 قوالب + 8 مجلدات
+- ✅ قصة ليلى والذئب — Story Bible + Character Bibles + Final Script (6 مشاهد عربية)
+- ✅ 7 Image Prompts جاهزة (layla_reference + 6 scenes) — مُثبّتة على المرجعية
+- ✅ صورة ليلى المرجعية معتمدة: `content_studio/public_library/04_images/layla_wolf/layla_reference.png`
+- ✅ 6 صور مشاهد منتجة وموجودة: `assets/public_library/layla_wolf/images/scene_01-06.jpeg`
+- ✅ `SmartImage` widget — يدعم asset + network تلقائياً
+- ✅ قصة ليلى مُدمجة محلياً في `library_service.dart` بـ UUID `11111111-1111-1111-1111-111111111111`
+- ✅ Cinema تعرض الصور المحلية بشكل صحيح
+- ✅ Dev-only Audio Export Service + Panel جاهزة (مخفية للمستخدم العادي)
+- ✅ `pubspec.yaml` يسجّل assets المكتبة العامة
+
+### ما ينتظر التنفيذ البشري الآن
+- ⏳ **توليد صوت ليلى المُصدَّر** — يحتاج تشغيل التطبيق بـ:
+  ```
+  flutter run --dart-define=PUBLIC_LIBRARY_AUDIO_EXPORT=true
+  ```
+  ثم فتح ليلى → زر التحميل في AppBar → توليد
+  المخرج: 6 ملفات mp3 + `audio_manifest.json` في
+  `content_studio/public_library/05_audio/layla_wolf/`
+
+- ⏳ **ربط الصوت بالقصة** — بعد التوليد، تحديث `_laylaWolfStaticStory.scenes_json[].audio_url` لتُشير لمسار `assets/public_library/layla_wolf/audio/scene_N.mp3` (نقل الملفات لـ assets + تسجيلها في pubspec)
+
+- ⏳ **اختبار end-to-end** بحساب جديد (20 ⭐ → فتح ليلى → خصم 10 → تجربة كاملة)
+
+- ⏳ **نقل ليلى لـ Supabase `public_stories`** (اختياري — قد نُبقيها محلية للإطلاق)
+
+### ما هو مؤجل (دفع/تفعيل خارجي)
+- ⏳ Apple Developer + Google Play (بعد الراتب)
+- ⏳ IAP / Moyasar live
+- ⏳ ElevenLabs billing
+- ⏳ المتجر الخارجي Hostinger
+- ⏳ 4 قصص أخرى للمكتبة العامة (سباق الغابة + مصباح الأمنيات + البذرة + مرآة الغابة)
+
+---
+
+---
+
+## 🔄 قرار جديد 2026-04-24 — Content Pipeline Pivot
+
+**لم يعد إنتاج قصص المكتبة العامة يتم من داخل التطبيق.**
+
+بعد اختبار قصة "ليلى والذئب" من التطبيق وفشل معايير الجودة (5 مشاهد بدل 6، شخصية غير ثابتة، تشوّه أيدي، نص ضعيف):
+- ✅ تم إنشاء **Content Studio خارجي**: `content_studio/public_library/`
+- ✅ 7 قوالب احترافية (Story Bible, Character Bible, Scene Sheet, Image Prompt, Import JSON, QC Checklist, README)
+- ✅ 8 مجلدات للتنظيم (00_catalog → 07_qc_reports)
+- ⚠️ `publicLibraryProduction` flag يبقى كأداة **اختبار/تطوير فقط** — ليس مصدر إنتاج الإطلاق
+
+**المرجع الكامل:** `content_studio/public_library/README_PUBLIC_LIBRARY_CONTENT_PIPELINE.md`
+**Restore Point:** `before_external_public_library_content_studio` (✅ GitHub)
 
 ---
 

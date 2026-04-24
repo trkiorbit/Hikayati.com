@@ -1,0 +1,84 @@
+{
+  "_comment_top": "═══ Skeleton استيراد قصة 'ليلى والذئب الذكي' إلى public_stories ═══",
+  "_comment_status": "هيكل فقط — جميع الروابط PLACEHOLDER. تُستبدل بعد رفع الأصول لـ Supabase Storage.",
+  "_comment_workflow": [
+    "1. أنتج layla_reference أولاً واعتمدها",
+    "2. أنتج 6 صور المشاهد",
+    "3. أنتج 6 ملفات صوت TTS",
+    "4. ارفع الصور إلى: public-library-scenes/layla_wolf/",
+    "5. ارفع الصوتيات إلى: public-library-audio/layla_wolf/",
+    "6. ارفع cover إلى: public-library-covers/",
+    "7. استبدل PLACEHOLDER_* بالـ public URLs الحقيقية",
+    "8. مرّر QC checklist كاملاً",
+    "9. نفّذ ALTER TABLE migration إن لم يُنفَّذ من قبل",
+    "10. نفّذ SQL INSERT لنقل القصة إلى public_stories"
+  ],
+
+  "title": "ليلى والذئب الذكي",
+  "summary": "في غابة سحرية تعبرها ليلى لإيصال سلة طعام لجدتها، يلتقيها ذئب رمادي غريب يُخيفها في البداية، لكنها تكتشف أنه ليس كما يبدو. قصة دافئة تعلّم الأطفال أن القلب الذكي لا يحكم من أول نظرة، وأن الرحمة قد تفتح أبواب المغامرة.",
+  "category": "مغامرات",
+  "price_credits": 10,
+  "cover": "PLACEHOLDER_COVER_URL",
+  "voice_type": "echo",
+
+  "scenes_json": [
+    {
+      "_scene_number": 1,
+      "_scene_title": "الوداع الدافئ",
+      "text": "في صباح يوم هادئ، وقفت ليلى عند باب بيتها الصغير قرب الغابة. كانت تحمل سلةً صغيرة مليئةً بالخبز الدافئ والعسل لجدتها المحبوبة. نظرت إلى الطريق الطويل، وابتسمت في قلبها، ثم خطت خطوتها الأولى نحو المغامرة.",
+      "imageUrl": "PLACEHOLDER_SCENE_1_IMAGE_URL",
+      "audio_url": "PLACEHOLDER_SCENE_1_AUDIO_URL"
+    },
+    {
+      "_scene_number": 2,
+      "_scene_title": "همسة الغابة",
+      "text": "دخلت ليلى الغابة الساحرة، والشمس تتسلل بلطف بين الأشجار العالية. لفت انتباهها آثار أقدام كبيرة في التراب، وسمعت صوتاً هادئاً خلف الأشجار. أمسكت سلتها بقوة، وتقدمت بحذر، فضولها أكبر من خوفها.",
+      "imageUrl": "PLACEHOLDER_SCENE_2_IMAGE_URL",
+      "audio_url": "PLACEHOLDER_SCENE_2_AUDIO_URL"
+    },
+    {
+      "_scene_number": 3,
+      "_scene_title": "اللقاء غير المتوقع",
+      "text": "فجأةً، ظهر من بين الأشجار ذئبٌ رماديٌ هادئ. ارتجفت ليلى قليلاً، لكنها لاحظت أن عينيه لا تشبهان عيون الوحوش في الحكايات. نظر إليها الذئب بلطف وقال بصوت ناعم: «لا تخافي يا صغيرة، أنا بحاجة إلى مساعدتك».",
+      "imageUrl": "PLACEHOLDER_SCENE_3_IMAGE_URL",
+      "audio_url": "PLACEHOLDER_SCENE_3_AUDIO_URL"
+    },
+    {
+      "_scene_number": 4,
+      "_scene_title": "السر في الطريق",
+      "text": "أشار الذئب بأنفه نحو الأمام، حيث بدا الجسر الخشبي القديم متكسراً فوق النهر. قال بصوت حزين: «كنت أحرس هذا الطريق كل يوم، لكي لا يمر أحد من هنا فيقع». أدركت ليلى أن الذئب لم يكن عدواً، بل كان حارساً صامتاً يخاف على الناس.",
+      "imageUrl": "PLACEHOLDER_SCENE_4_IMAGE_URL",
+      "audio_url": "PLACEHOLDER_SCENE_4_AUDIO_URL"
+    },
+    {
+      "_scene_number": 5,
+      "_scene_title": "يدٌ بيد وفرو",
+      "text": "عملت ليلى والذئب معاً. جمعت الأغصان المتينة، وساعدها الذئب في جرّها بفمه. معاً صنعا طريقاً آمناً صغيراً حول الجسر المكسور. ضحكت ليلى، وربّتت على رأس الذئب بلطف، وقالت: «أنت أذكى صديق قابلته اليوم».",
+      "imageUrl": "PLACEHOLDER_SCENE_5_IMAGE_URL",
+      "audio_url": "PLACEHOLDER_SCENE_5_AUDIO_URL"
+    },
+    {
+      "_scene_number": 6,
+      "_scene_title": "قلبٌ أوسع من الغابة",
+      "text": "وصلت ليلى إلى بيت جدتها، ففتحت لها الجدة ذراعيها بابتسامة دافئة. روت ليلى قصة الذئب الذي لم يكن كما تخيلته في البداية. همست الجدة وهي تمسح شعرها: «أجمل الأشياء يا حبيبتي يراها القلبُ الذكي، لا العينُ المتسرعة».",
+      "imageUrl": "PLACEHOLDER_SCENE_6_IMAGE_URL",
+      "audio_url": "PLACEHOLDER_SCENE_6_AUDIO_URL"
+    }
+  ],
+
+  "_import_sql_when_ready": "-- بعد استبدال كل PLACEHOLDER_* بروابط حقيقية، نفّذ في Supabase SQL Editor:\n-- (تأكد من تنفيذ ALTER TABLE أولاً لإضافة scenes_json + voice_type)\n\nINSERT INTO public.public_stories (title, summary, cover, scenes_json, voice_type, price_credits, category)\nVALUES (\n  'ليلى والذئب الذكي',\n  'في غابة سحرية تعبرها ليلى لإيصال سلة طعام لجدتها، يلتقيها ذئب رمادي غريب يُخيفها في البداية، لكنها تكتشف أنه ليس كما يبدو. قصة دافئة تعلّم الأطفال أن القلب الذكي لا يحكم من أول نظرة، وأن الرحمة قد تفتح أبواب المغامرة.',\n  '<real cover URL>',\n  '<scenes_json as jsonb — 6 items without _scene_number and _scene_title prefix>'::jsonb,\n  'echo',\n  10,\n  'مغامرات'\n);",
+
+  "_validation_checklist_before_import": [
+    "title غير فارغ",
+    "summary 2-3 جمل تسويقية",
+    "category = 'مغامرات'",
+    "price_credits = 10",
+    "cover = URL صالح مرفوع لـ Supabase Storage",
+    "voice_type = 'echo' أو 'fable'",
+    "scenes_json = 6 عناصر بالضبط",
+    "كل عنصر: text + imageUrl + audio_url بدون PLACEHOLDER",
+    "كل imageUrl يُفتح في المتصفح (public URL)",
+    "كل audio_url يُشغّل (public URL)",
+    "QC checklist مرّرت ✅"
+  ]
+}

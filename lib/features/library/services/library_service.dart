@@ -57,12 +57,79 @@ class LibraryService {
     debugPrint('[Library] ✅ تم حذف القصة $storyId نهائياً');
   }
 
+  /// قصة ليلى والذئب الذكي — قصة المكتبة العامة الافتتاحية
+  /// مُدمجة محلياً (assets) إلى أن يتم نقلها لـ public_stories في Supabase
+  /// UUID ثابت يسمح للـ purchases.story_id بالعمل
+  static const Map<String, dynamic> _laylaWolfStaticStory = {
+    'id': '11111111-1111-1111-1111-111111111111',
+    'title': 'ليلى والذئب الذكي',
+    'summary':
+        'في غابة سحرية تعبرها ليلى لإيصال سلة طعام لجدتها، يلتقيها ذئب رمادي غريب يُخيفها في البداية، لكنها تكتشف أنه ليس كما يبدو. قصة دافئة تعلّم الأطفال أن القلب الذكي لا يحكم من أول نظرة.',
+    'cover': 'assets/public_library/layla_wolf/images/scene_01.jpeg',
+    'price_credits': 10,
+    'category': 'مغامرات',
+    'voice_type': 'echo',
+    'is_static_local': true,
+    'scenes_json': [
+      {
+        'text':
+            'في صباح يوم هادئ، وقفت ليلى عند باب بيتها الصغير قرب الغابة. كانت تحمل سلةً صغيرة مليئةً بالخبز الدافئ والعسل لجدتها المحبوبة. نظرت إلى الطريق الطويل، وابتسمت في قلبها، ثم خطت خطوتها الأولى نحو المغامرة.',
+        'imageUrl': 'assets/public_library/layla_wolf/images/scene_01.jpeg',
+        'audio_url': '',
+      },
+      {
+        'text':
+            'دخلت ليلى الغابة الساحرة، والشمس تتسلل بلطف بين الأشجار العالية. لفت انتباهها آثار أقدام كبيرة في التراب، وسمعت صوتاً هادئاً خلف الأشجار. أمسكت سلتها بقوة، وتقدمت بحذر، فضولها أكبر من خوفها.',
+        'imageUrl': 'assets/public_library/layla_wolf/images/scene_02.jpeg',
+        'audio_url': '',
+      },
+      {
+        'text':
+            'فجأةً، ظهر من بين الأشجار ذئبٌ رماديٌ هادئ. ارتجفت ليلى قليلاً، لكنها لاحظت أن عينيه لا تشبهان عيون الوحوش في الحكايات. نظر إليها الذئب بلطف وقال بصوت ناعم: «لا تخافي يا صغيرة، أنا بحاجة إلى مساعدتك».',
+        'imageUrl': 'assets/public_library/layla_wolf/images/scene_03.jpeg',
+        'audio_url': '',
+      },
+      {
+        'text':
+            'أشار الذئب بأنفه نحو الأمام، حيث بدا الجسر الخشبي القديم متكسراً فوق النهر. قال بصوت حزين: «كنت أحرس هذا الطريق كل يوم، لكي لا يمر أحد من هنا فيقع». أدركت ليلى أن الذئب لم يكن عدواً، بل كان حارساً صامتاً يخاف على الناس.',
+        'imageUrl': 'assets/public_library/layla_wolf/images/scene_04.jpeg',
+        'audio_url': '',
+      },
+      {
+        'text':
+            'عملت ليلى والذئب معاً. جمعت الأغصان المتينة، وساعدها الذئب في جرّها بفمه. معاً صنعا طريقاً آمناً صغيراً حول الجسر المكسور. ضحكت ليلى، وربّتت على رأس الذئب بلطف، وقالت: «أنت أذكى صديق قابلته اليوم».',
+        'imageUrl': 'assets/public_library/layla_wolf/images/scene_05.jpeg',
+        'audio_url': '',
+      },
+      {
+        'text':
+            'وصلت ليلى إلى بيت جدتها، ففتحت لها الجدة ذراعيها بابتسامة دافئة. روت ليلى قصة الذئب الذي لم يكن كما تخيلته في البداية. همست الجدة وهي تمسح شعرها: «أجمل الأشياء يا حبيبتي يراها القلبُ الذكي، لا العينُ المتسرعة».',
+        'imageUrl': 'assets/public_library/layla_wolf/images/scene_06.jpeg',
+        'audio_url': '',
+      },
+    ],
+  };
+
   Future<List<dynamic>> getPublicStories() async {
-    final data = await _client
-        .from('public_stories')
-        .select()
-        .order('created_at', ascending: false);
-    return data;
+    // محاولة جلب القصص من Supabase أولاً
+    List<dynamic> remoteStories = [];
+    try {
+      remoteStories = await _client
+          .from('public_stories')
+          .select()
+          .order('created_at', ascending: false);
+    } catch (e) {
+      debugPrint('[Library] ⚠️ تعذر جلب القصص العامة من Supabase: $e');
+    }
+
+    // دمج قصة ليلى المحلية في المقدمة (إذا لم تكن موجودة في Supabase بنفس الـ ID)
+    final laylaId = _laylaWolfStaticStory['id'];
+    final hasLaylaInRemote = remoteStories.any((s) => s['id'] == laylaId);
+    if (!hasLaylaInRemote) {
+      return [_laylaWolfStaticStory, ...remoteStories];
+    }
+
+    return remoteStories;
   }
 
   Future<List<String>> getUnlockedPublicStories() async {

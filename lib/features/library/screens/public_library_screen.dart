@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
 import 'package:hikayati/core/widgets/credits_badge.dart';
+import 'package:hikayati/core/widgets/smart_image.dart';
 import 'package:hikayati/features/library/services/library_service.dart';
 import 'package:hikayati/application/use_cases/get_public_stories_use_case.dart';
 import 'package:hikayati/application/use_cases/unlock_public_story_use_case.dart';
@@ -245,10 +246,10 @@ class _PublicLibraryScreenState extends State<PublicLibraryScreen> {
                     ? ImageFilter.blur(sigmaX: 0, sigmaY: 0) 
                     : ImageFilter.blur(sigmaX: 5, sigmaY: 5), // تظليل للقصص المقفلة
                 child: coverUrl.isNotEmpty
-                    ? Image.network(
-                        coverUrl,
+                    ? SmartImage(
+                        path: coverUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholderImage(),
+                        errorPlaceholder: (_) => _placeholderImage(),
                       )
                     : _placeholderImage(),
               ),

@@ -1,6 +1,24 @@
 # PUBLIC LIBRARY CLOSURE REPORT
 **التاريخ:** 2026-04-24
-**الحالة:** ⚠️ إقفال جزئي — يحتاج تنفيذ بشري لإكمال الإنتاج
+**الحالة:** 🔄 **PIVOT** — إنتاج القصص انتقل خارج التطبيق عبر Content Studio
+
+---
+
+## 🚨 تحديث حرج (2026-04-24)
+
+بعد اختبار قصة "ليلى والذئب" من داخل التطبيق، **رُفض** الـ pipeline الداخلي لإنتاج محتوى المكتبة العامة للأسباب:
+- 5 مشاهد بدل 6
+- شخصية غير ثابتة
+- تشوّه أيدي/قدمين
+- نص عربي ضعيف
+
+**القرار الجديد:** إنتاج القصص **خارج التطبيق** عبر `content_studio/public_library/`
+
+**راجع:** `content_studio/public_library/README_PUBLIC_LIBRARY_CONTENT_PIPELINE.md`
+
+**Restore Point:** `before_external_public_library_content_studio` (✅ GitHub)
+
+---
 
 ---
 

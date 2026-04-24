@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/smart_image.dart';
+import 'package:hikayati/features/story_engine/services/public_library_audio_export_service.dart';
+import 'package:hikayati/features/story_engine/widgets/public_library_audio_export_panel.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class CinemaScreen extends StatefulWidget {
@@ -42,6 +45,48 @@ class _CinemaScreenState extends State<CinemaScreen>
   late Animation<double> _textFadeAnim;
 
   static const platform = MethodChannel('com.hikayati/secure');
+
+  // ─────────────────────────────────────────────────────────────────
+  // Public Library Audio Export — Developer-only detection
+  // يظهر زر التصدير فقط إذا:
+  //   1. تم تشغيل التطبيق بـ --dart-define=PUBLIC_LIBRARY_AUDIO_EXPORT=true
+  //   2. القصة الحالية هي قصة مكتبة عامة معروفة (Layla Wolf static ID)
+  // ─────────────────────────────────────────────────────────────────
+  static const _kLaylaWolfId = '11111111-1111-1111-1111-111111111111';
+
+  Map<String, String>? get _exportableStorySlug {
+    final id = widget.storyData['id']?.toString();
+    if (id == _kLaylaWolfId) {
+      return {
+        'slug': 'layla_wolf',
+        'title': widget.storyData['title']?.toString() ?? 'ليلى والذئب الذكي',
+      };
+    }
+    return null;
+  }
+
+  bool get _showExportButton =>
+      PublicLibraryAudioExportService.isExportModeEnabled &&
+      _exportableStorySlug != null;
+
+  void _openExportPanel() {
+    final story = _exportableStorySlug;
+    if (story == null) return;
+
+    // إيقاف الصوت قبل فتح اللوحة
+    _stopAudio();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => PublicLibraryAudioExportPanel(
+        slug: story['slug']!,
+        title: story['title']!,
+        scenes: _scenes,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -246,6 +291,16 @@ class _CinemaScreenState extends State<CinemaScreen>
           ],
         ),
         centerTitle: true,
+        actions: [
+          // زر تصدير الصوت — يظهر فقط للمطوّر في وضع dart-define
+          if (_showExportButton)
+            IconButton(
+              tooltip: 'Public Library Audio Export (Dev)',
+              icon: const Icon(Icons.download_for_offline,
+                  color: AppColors.vibrantOrange),
+              onPressed: _openExportPanel,
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -321,24 +376,21 @@ class _CinemaScreenState extends State<CinemaScreen>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  scene['imageUrl'] ?? '',
+                child: SmartImage(
+                  path: scene['imageUrl']?.toString(),
                   fit: BoxFit.cover,
                   width: double.infinity,
-                  loadingBuilder: (_, child, prog) {
-                    if (prog == null) return child;
-                    return Container(
-                      height: 280,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(color: AppColors.primary),
-                      ),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => Container(
+                  loadingPlaceholder: (_) => Container(
+                    height: 280,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(color: AppColors.primary),
+                    ),
+                  ),
+                  errorPlaceholder: (_) => Container(
                     height: 280,
                     color: Colors.grey[900],
                     child: const Center(

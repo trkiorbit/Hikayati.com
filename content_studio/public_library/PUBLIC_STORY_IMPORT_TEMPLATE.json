@@ -1,0 +1,63 @@
+{
+  "_comment_top": "═══ قالب استيراد قصة عامة إلى جدول public_stories ═══",
+  "_comment_usage": "انسخ هذا الملف لكل قصة، أعد التسمية إلى <story-slug>.json، واملأ الحقول. ضعه في 06_import_ready/",
+  "_comment_critical": "لا تُنفّذ import قبل: 1) ALTER TABLE scenes_json + voice_type، 2) QC Checklist passed",
+
+  "title": "ليلى والذئب الذكي",
+  "summary": "انطلقي مع ليلى في رحلة عبر غابة ساحرة لإيصال سلة طعام لجدتها. في الطريق، تلتقي بذئب غير متوقع يعلّمها درساً جميلاً عن عدم الحكم السريع على الآخرين.",
+  "category": "مغامرات",
+  "price_credits": 10,
+  "cover": "https://supabase.storage.url/public/public-library-covers/layla_wolf_cover.jpg",
+  "voice_type": "fable",
+
+  "_comment_scenes": "scenes_json: مصفوفة 6 مشاهد. كل مشهد له text + imageUrl + audio_url",
+
+  "scenes_json": [
+    {
+      "text": "نص المشهد 1 بالعربية — 3 إلى 5 أسطر، قراءة سلسة للأطفال...",
+      "imageUrl": "https://supabase.storage.url/public/public-library-scenes/layla_wolf/scene_1.jpg",
+      "audio_url": "https://supabase.storage.url/public/public-library-audio/layla_wolf/scene_1.mp3"
+    },
+    {
+      "text": "نص المشهد 2 بالعربية...",
+      "imageUrl": "https://supabase.storage.url/public/public-library-scenes/layla_wolf/scene_2.jpg",
+      "audio_url": "https://supabase.storage.url/public/public-library-audio/layla_wolf/scene_2.mp3"
+    },
+    {
+      "text": "نص المشهد 3 بالعربية...",
+      "imageUrl": "https://supabase.storage.url/public/public-library-scenes/layla_wolf/scene_3.jpg",
+      "audio_url": "https://supabase.storage.url/public/public-library-audio/layla_wolf/scene_3.mp3"
+    },
+    {
+      "text": "نص المشهد 4 بالعربية...",
+      "imageUrl": "https://supabase.storage.url/public/public-library-scenes/layla_wolf/scene_4.jpg",
+      "audio_url": "https://supabase.storage.url/public/public-library-audio/layla_wolf/scene_4.mp3"
+    },
+    {
+      "text": "نص المشهد 5 بالعربية...",
+      "imageUrl": "https://supabase.storage.url/public/public-library-scenes/layla_wolf/scene_5.jpg",
+      "audio_url": "https://supabase.storage.url/public/public-library-audio/layla_wolf/scene_5.mp3"
+    },
+    {
+      "text": "نص المشهد 6 بالعربية...",
+      "imageUrl": "https://supabase.storage.url/public/public-library-scenes/layla_wolf/scene_6.jpg",
+      "audio_url": "https://supabase.storage.url/public/public-library-audio/layla_wolf/scene_6.mp3"
+    }
+  ],
+
+  "_import_sql_template": "-- انسخ هذا وشغّله في Supabase SQL Editor بعد استبدال الحقول:\nINSERT INTO public.public_stories (title, summary, cover, scenes_json, voice_type, price_credits, category)\nVALUES (\n  'ليلى والذئب الذكي',\n  '<summary here>',\n  '<cover url>',\n  '<scenes_json as jsonb string>',\n  'fable',\n  10,\n  'مغامرات'\n);",
+
+  "_validation_checklist": [
+    "title غير فارغ وعربي",
+    "summary 2-3 جمل تسويقية",
+    "category من القائمة المحددة",
+    "price_credits = 10 (ثابت للإطلاق)",
+    "cover رابط صالح ومرفوع إلى Supabase Storage",
+    "voice_type: echo / fable / onyx (عادي فقط — لا cloned)",
+    "scenes_json يحتوي 6 مشاهد بالضبط",
+    "كل مشهد له text + imageUrl + audio_url",
+    "كل imageUrl رابط صالح ومرفوع",
+    "كل audio_url رابط صالح ومرفوع",
+    "لا نصوص فارغة أو روابط مكسورة"
+  ]
+}

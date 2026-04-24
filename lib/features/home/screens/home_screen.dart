@@ -6,6 +6,7 @@ import 'package:hikayati/application/use_cases/get_private_stories_use_case.dart
 import 'package:hikayati/application/use_cases/get_public_stories_use_case.dart';
 import 'dart:convert';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/smart_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -485,13 +486,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: ClipRRect(
                           borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(10)),
-                          child: Image.network(coverUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (ctx, err, stack) => Icon(
-                                  Icons.image_not_supported,
-                                  size: 50,
-                                  color: AppColors.vibrantOrange)),
+                          child: SmartImage(
+                            path: coverUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorPlaceholder: (_) => Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: AppColors.vibrantOrange),
+                          ),
                         ),
                       )
                     else
