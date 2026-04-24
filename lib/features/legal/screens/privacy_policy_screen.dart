@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/credits_badge.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -13,6 +14,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
         backgroundColor: AppColors.appBarBackground,
         foregroundColor: AppColors.glassWhite,
         centerTitle: true,
+        actions: const [CreditsBadge()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

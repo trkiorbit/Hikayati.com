@@ -111,11 +111,21 @@
 
 ---
 
+## Batches المنجزة — Phase 1
+
+| Batch | الحالة | النتيجة |
+|---|---|---|
+| `batch-001-phase1-git-consolidation` | ✅ مُغلقة (2026-04-24) | main تحرّك إلى `1d23c95`، HEAD ليست detached، 5 branches محذوفة |
+| `batch-002-phase1-auth-decisions` | ✅ مُغلقة (2026-04-24) | Eager profile + Google Sign-In disabled |
+| `batch-002b-initial-credits-adjustment` | ✅ مُغلقة (2026-04-24) | رصيد البداية: 100 → 20 ⭐ |
+| `batch-003-phase1-4-paths-verification` | ⏳ التالية | اختبار يدوي للمسارات الأربعة |
+
 ## الخطوة التالية
 
-**Batch 001:** Phase 1 Git Consolidation
-- دمج `41acf97` إلى `main`
-- حذف 7 branches احتياطية قديمة
-- 15 دقيقة فقط
+**Batch 003:** Phase 1 — 4 Paths Verification (اختبار يدوي فقط)
+- المسار 1: إنشاء قصة عادية → -10 ⭐
+- المسار 2: قصة + أفاتار → -20 ⭐
+- المسار 3: فتح قصة خاصة → صفر خصم
+- المسار 4: فتح قصة عامة جديدة → -10 ⭐
 
-**للمتابعة:** اطلب تنفيذ `batch-001-phase1-git-consolidation`.
+**بعد نجاحها:** إنشاء `rp-01-launch-core-lock` tag والانتقال إلى Phase 2.

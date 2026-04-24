@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hikayati/application/use_cases/get_private_stories_use_case.dart';
 import 'package:hikayati/application/use_cases/delete_story_use_case.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/credits_badge.dart';
 
 class PrivateLibraryScreen extends StatefulWidget {
   const PrivateLibraryScreen({super.key});
@@ -211,7 +212,7 @@ class _PrivateLibraryScreenState extends State<PrivateLibraryScreen> {
                   child: const Text('تحديد الكل', style: TextStyle(color: Colors.white70)),
                 ),
               ]
-            : null,
+            : const [CreditsBadge()],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))

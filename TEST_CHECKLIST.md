@@ -44,11 +44,20 @@
 - [ ] القصة تُحفظ في مكتبته الخاصة
 - [ ] إعادة فتحها = صفر خصم
 
-### اختبارات الدخول
+### اختبارات الدخول (بعد batch-002 ✅)
 - [ ] التطبيق يفتح → المستخدم المسجّل يدخل مباشرة للرئيسية
 - [ ] تسجيل خروج → إعادة فتح → شاشة الدخول
-- [ ] signup جديد → profile يُنشأ فوراً (eager) — batch-002
-- [ ] Google Sign-In: مُعطّل (batch-002)
+- [x] **signup جديد → profile يُنشأ فوراً (eager)** — مُنجز في batch-002
+  - `AuthUseCases.signUpEmail()` يستدعي `SupabaseService.ensureProfileExists(userId)`
+  - `ensureProfileExists` يتعامل مع duplicate (لا crash)
+- [x] **رصيد المستخدم الجديد = 20 ⭐** — مُنجز في batch-002b
+  - `supabase_service.dart:60` → `'credits': 20`
+  - المستخدم الموجود لا يتأثر (skip إذا existing != null)
+  - يتوقع: signup جديد → رصيد 20 ⭐ يظهر في AppBar فور الدخول
+- [x] **Google Sign-In: مُعطّل رسمياً** — مُنجز في batch-002
+  - UI: لا يحتوي Google button (لا يوجد أصلاً)
+  - Logic: `signInWithGoogle()` يرمي `[DISABLED_FOR_FIRST_LAUNCH]` exception
+  - Comment `TODO(phase-6)` موجود للإعادة لاحقاً
 
 **Verification النهائية:**
 - [ ] `flutter analyze`: 0 errors, 0 warnings (من تغييراتنا)

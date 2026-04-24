@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/credits_badge.dart';
 import 'package:hikayati/features/library/services/library_service.dart';
 
 enum CreditBadgeType { deduction, addition, balance }
@@ -31,7 +32,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   // التكلفة الفعلية (تطابق generate_story_use_case.dart)
   static const int _baseStoryCost = 10;
   static const int _avatarUsageCost = 10;
-  static const int _clonedVoiceUsageCost = 20;
+  static const int _clonedVoiceUsageCost = 10;
 
   int get _totalCost {
     int total = _baseStoryCost;
@@ -47,26 +48,41 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
   }
 
   Future<void> _loadSavedData() async {
-    final prefs = await SharedPreferences.getInstance();
-
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId != null) {
-        final response = await Supabase.instance.client
-            .from('profiles')
-            .select('avatar_profile_summary')
-            .eq('user_id', userId)
-            .single();
-        if (response['avatar_profile_summary'] != null && mounted) {
-          setState(() => _savedAvatar = response['avatar_profile_summary']);
-        }
+      if (userId == null) return;
+
+      // مصدر الحقيقة الوحيد: profiles في Supabase للمستخدم الحالي
+      final response = await Supabase.instance.client
+          .from('profiles')
+          .select('avatar_profile_summary, voice_clone_enabled')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (response == null) return;
+
+      // 1) الأفاتار
+      if (response['avatar_profile_summary'] != null && mounted) {
+        setState(() => _savedAvatar = response['avatar_profile_summary']);
+      }
+
+      // 2) الصوت المستنسخ — مصدر الحقيقة من Supabase فقط
+      final voiceCloneEnabled = response['voice_clone_enabled'] == true;
+      if (!voiceCloneEnabled) {
+        // المستخدم الحالي لا يملك صوتاً مستنسخاً — امسح أي cache محلي قديم
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('cloned_voice_id');
+        if (mounted) setState(() => _savedVoiceId = null);
+        debugPrint('[StoryCreation] voice_clone_enabled=false → تنظيف cache');
+      } else {
+        // المستخدم الحالي يملك صوتاً — اقرأ voice_id من SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        final voiceId = prefs.getString('cloned_voice_id');
+        if (mounted) setState(() => _savedVoiceId = voiceId);
       }
     } catch (e) {
-      debugPrint('[StoryCreation] لم يتم العثور على بطل محفوظ: $e');
+      debugPrint('[StoryCreation] خطأ في تحميل البيانات: $e');
     }
-
-    final voiceId = prefs.getString('cloned_voice_id');
-    if (mounted) setState(() => _savedVoiceId = voiceId);
   }
 
   void _generateStory() async {
@@ -144,6 +160,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
         foregroundColor: AppColors.vibrantOrange,
         elevation: 0,
         centerTitle: true,
+        actions: const [CreditsBadge()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -172,15 +189,19 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
             // ── 2) بطل الأفاتار ──
             _buildFeatureCard(
               icon: hasAvatar ? Icons.face : Icons.add_a_photo,
-              title: hasAvatar ? 'البطل السحري جاهز!' : 'اصنع بطلك أولاً',
+              title: hasAvatar ? 'بطلك جاهز' : 'اصنع بطلك أولاً',
               subtitle: hasAvatar
                   ? (_useAvatar
                       ? 'مفعّل — سيظهر البطل في صور القصة'
-                      : 'اضغط لتفعيل البطل في القصة')
-                  : 'لم يتم إنشاء بطل بعد',
+                      : 'سيظهر في صور القصة')
+                  : 'أنشئ بطلًا بصريًا مخصصًا لطفلك',
               isActive: _useAvatar,
               isAvailable: hasAvatar,
-              usageCost: _avatarUsageCost,
+              usageCost: _avatarUsageCost,     // 10 — عند الاستخدام في القصة
+              creationCost: 20,                // 20 — عند إنشاء الأفاتار
+              creationHint: 'تُخصم عند إنشاء البطل',
+              usageHint: 'تُخصم عند استخدامه في القصة',
+              showSavedBadgeWhenAvailable: false, // ← غيّرت: نعرض -10 بدل "محفوظ"
               onTap: hasAvatar
                   ? () => setState(() => _useAvatar = !_useAvatar)
                   : () => context.push('/avatar-lab'),
@@ -194,16 +215,20 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
             _buildFeatureCard(
               icon: hasClonedVoice ? Icons.record_voice_over : Icons.mic_none,
               title: hasClonedVoice
-                  ? 'صوتك المستنسخ جاهز!'
+                  ? 'صوتك المستنسخ جاهز'
                   : 'استنسخ صوتك أولاً',
               subtitle: hasClonedVoice
                   ? (_useClonedVoice
                       ? 'مفعّل — القصة ستُروى بصوتك'
-                      : 'اضغط لتفعيل صوتك في القصة')
-                  : 'لم يتم إنشاء صوت مستنسخ بعد',
+                      : 'فعّل صوتك ليُستخدم في القصة')
+                  : 'سجّل صوتك ليروي التطبيق القصص بصوتك',
               isActive: _useClonedVoice,
               isAvailable: hasClonedVoice,
               usageCost: _clonedVoiceUsageCost,
+              creationCost: 20,
+              creationHint: 'تُخصم عند استنساخ الصوت',
+              usageHint: 'تُخصم عند استخدامه في القصة',
+              showSavedBadgeWhenAvailable: false,
               onTap: hasClonedVoice
                   ? () => setState(() => _useClonedVoice = !_useClonedVoice)
                   : () => context.push('/voice-clone'),
@@ -309,7 +334,20 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
     required int usageCost,
     required VoidCallback onTap,
     ValueChanged<bool>? onToggle,
+    int? creationCost,                  // تكلفة الإنشاء لأول مرة
+    String? creationHint,               // سطر توضيحي قبل الإنشاء
+    String? usageHint,                  // سطر توضيحي بعد الإنشاء
+    bool showSavedBadgeWhenAvailable = false, // إذا true → badge "محفوظ" بدل شارة الخصم
   }) {
+    // تحديد أي badge سيظهر
+    final Widget? badge = _buildCardBadge(
+      isAvailable: isAvailable,
+      isActive: isActive,
+      usageCost: usageCost,
+      creationCost: creationCost,
+      showSavedBadgeWhenAvailable: showSavedBadgeWhenAvailable,
+    );
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -360,45 +398,7 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.glassWhite)),
                       ),
-                      // شارة التكلفة — تظهر فقط إذا الميزة متاحة
-                      if (isAvailable)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? const Color(0xFFFF5252).withValues(alpha: 0.15)
-                                : Colors.white.withValues(alpha: 0.04),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isActive
-                                  ? const Color(0xFFFF5252).withValues(alpha: 0.5)
-                                  : Colors.white.withValues(alpha: 0.08),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '-$usageCost',
-                                style: TextStyle(
-                                  color: isActive
-                                      ? const Color(0xFFFF5252)
-                                      : Colors.grey[400],
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Icon(Icons.stars,
-                                  size: 12,
-                                  color: isActive
-                                      ? const Color(0xFFFF5252)
-                                      : Colors.grey[400]),
-                            ],
-                          ),
-                        ),
+                      if (badge != null) badge,
                     ],
                   ),
                   const SizedBox(height: 3),
@@ -408,6 +408,24 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                           color: isActive
                               ? Colors.greenAccent
                               : Colors.grey[400])),
+                  // سطر توضيح:
+                  //   - غير متاح → creationHint (قبل الإنشاء)
+                  //   - متاح → usageHint (بعد الإنشاء، عند الاستخدام)
+                  if (!isAvailable && creationHint != null) ...[
+                    const SizedBox(height: 4),
+                    Text(creationHint,
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey[500])),
+                  ] else if (isAvailable && usageHint != null) ...[
+                    const SizedBox(height: 4),
+                    Text(usageHint,
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey[500])),
+                  ],
                 ],
               ),
             ),
@@ -423,6 +441,112 @@ class _StoryCreationScreenState extends State<StoryCreationScreen> {
                   size: 14, color: Colors.grey[600]),
           ],
         ),
+      ),
+    );
+  }
+
+  /// يبني الـ badge المناسب للكرت حسب حالة الميزة:
+  /// - إذا غير متاحة + creationCost موجود → شارة -X ⭐ حمراء (تكلفة الإنشاء)
+  /// - إذا متاحة + showSavedBadgeWhenAvailable=true → badge "محفوظ" أخضر
+  /// - إذا متاحة + !showSaved → شارة -X ⭐ (usage cost)
+  /// - إذا غير متاحة + لا creationCost → null
+  Widget? _buildCardBadge({
+    required bool isAvailable,
+    required bool isActive,
+    required int usageCost,
+    int? creationCost,
+    bool showSavedBadgeWhenAvailable = false,
+  }) {
+    // الحالة 1: غير متاحة لكن creationCost معطى → شارة الإنشاء
+    if (!isAvailable) {
+      if (creationCost == null) return null;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF5252).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: const Color(0xFFFF5252).withValues(alpha: 0.4),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('-$creationCost',
+                style: const TextStyle(
+                  color: Color(0xFFFF5252),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                )),
+            const SizedBox(width: 2),
+            const Icon(Icons.stars, size: 12, color: Color(0xFFFF5252)),
+          ],
+        ),
+      );
+    }
+
+    // الحالة 2: متاحة + showSavedBadgeWhenAvailable → badge "محفوظ" أخضر
+    if (showSavedBadgeWhenAvailable) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.greenAccent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.greenAccent.withValues(alpha: 0.5),
+            width: 1,
+          ),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, size: 12, color: Colors.greenAccent),
+            SizedBox(width: 4),
+            Text('محفوظ',
+                style: TextStyle(
+                  color: Colors.greenAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                )),
+          ],
+        ),
+      );
+    }
+
+    // الحالة 3: متاحة + !showSaved → شارة usage cost (كالصوت المستنسخ)
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isActive
+            ? const Color(0xFFFF5252).withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isActive
+              ? const Color(0xFFFF5252).withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('-$usageCost',
+              style: TextStyle(
+                color: isActive
+                    ? const Color(0xFFFF5252)
+                    : Colors.grey[400],
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              )),
+          const SizedBox(width: 2),
+          Icon(Icons.stars,
+              size: 12,
+              color: isActive
+                  ? const Color(0xFFFF5252)
+                  : Colors.grey[400]),
+        ],
       ),
     );
   }

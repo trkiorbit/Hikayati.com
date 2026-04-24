@@ -4,10 +4,11 @@
 CREATE TABLE public.profiles (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT,
-  credits INTEGER DEFAULT 100,
+  credits INTEGER DEFAULT 20,
   language VARCHAR(10) DEFAULT 'ar',
   avatar_data JSONB,
   voice_clone_enabled BOOLEAN DEFAULT false,
+  cloned_voice_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

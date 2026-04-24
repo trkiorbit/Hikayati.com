@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hikayati/core/config/story_generation_mode.dart';
 import 'package:hikayati/features/story_engine/services/unified_engine.dart';
 import 'package:hikayati/features/library/services/library_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -94,10 +95,28 @@ class GenerateStoryUseCase {
     }
     _isGenerating = true;
 
-    // التكلفة: أساس 10 + 10 عند استخدام الأفاتار + 20 عند استخدام الصوت المستنسخ
+    // ═══════════════════════════════════════════════════════════════
+    // Public Library Production Mode — فرض القيود
+    // ═══════════════════════════════════════════════════════════════
+    // في وضع إنتاج المكتبة العامة، نمنع:
+    // - استخدام الأفاتار (قصص للجمهور، ليست مخصصة لطفل واحد)
+    // - استخدام الصوت المستنسخ (صوت عادي فقط للجمهور)
+    // - ذلك يُقلّل التكلفة أيضاً إلى 10 فقط
+    if (StoryGenerationConfig.blocksAvatar && requestData['useAvatar'] == true) {
+      debugPrint('[UseCase] 🔒 Public Library Mode → avatar disabled');
+      requestData['useAvatar'] = false;
+      requestData['avatarData'] = null;
+      requestData['heroVisualDescription'] = '';
+    }
+    if (StoryGenerationConfig.blocksClonedVoice && voice == 'cloned') {
+      debugPrint('[UseCase] 🔒 Public Library Mode → cloned voice disabled');
+      voice = 'echo'; // صوت عادي افتراضي
+    }
+
+    // التكلفة: أساس 10 + 10 عند استخدام الأفاتار + 10 عند استخدام الصوت المستنسخ
     const int baseStoryCost = 10;
     const int avatarUsageCost = 10;
-    const int clonedVoiceUsageCost = 20;
+    const int clonedVoiceUsageCost = 10;
 
     int totalCost = baseStoryCost;
     if (requestData['useAvatar'] == true) totalCost += avatarUsageCost;

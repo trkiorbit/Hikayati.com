@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/credits_badge.dart';
 
 class StoreScreen extends StatefulWidget {
   const StoreScreen({super.key});
@@ -52,6 +53,7 @@ class _StoreScreenState extends State<StoreScreen> {
         backgroundColor: AppColors.appBarBackground,
         foregroundColor: AppColors.glassWhite,
         centerTitle: true,
+        actions: const [CreditsBadge()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

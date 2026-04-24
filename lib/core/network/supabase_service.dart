@@ -53,12 +53,14 @@ class SupabaseService {
           .maybeSingle();
 
       if (existing == null) {
+        // Phase 1 batch-002b: رصيد البداية للمستخدم الجديد = 20 ⭐
+        // (10 لقصة عادية + 10 لفتح قصة واحدة من المكتبة العامة — بدون أفاتار/صوت)
         await client.from('profiles').insert({
           'user_id': userId,
-          'credits': 100,
+          'credits': 20,
           'language': 'ar',
         });
-        debugPrint('[SupabaseService] ✅ تم إنشاء Profile جديد للمستخدم: $userId');
+        debugPrint('[SupabaseService] ✅ تم إنشاء Profile جديد للمستخدم: $userId (رصيد ابتدائي: 20 ⭐)');
       } else {
         debugPrint('[SupabaseService] Profile موجود مسبقاً — لا حاجة للإنشاء.');
       }

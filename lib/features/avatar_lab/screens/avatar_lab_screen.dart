@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/credits_badge.dart';
 
 class AvatarLabScreen extends StatefulWidget {
   const AvatarLabScreen({super.key});
@@ -202,12 +203,18 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
           _generatedOptions = [];
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ تم حفظ البطل وخصم 20 جوهرة!')),
+          const SnackBar(
+            content: Text('✅ تم حفظ البطل وخصم 20 ⭐ من رصيدك!'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل الحفظ: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('فشل الحفظ: ${e.toString().replaceFirst('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -327,14 +334,77 @@ class _AvatarLabScreenState extends State<AvatarLabScreen> {
     );
   }
 
+  /// بطاقة التكلفة — واضحة دائماً قبل وبعد الإنشاء
+  Widget _buildPricingInfo() {
+    const int creationCost = 20;
+    const int usagePerStory = 10;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: AppColors.vibrantOrange.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        children: [
+          _pricingRow(
+            label: 'إنشاء البطل (مرة واحدة)',
+            value: '-$creationCost',
+            isDeduction: true,
+          ),
+          const SizedBox(height: 6),
+          Divider(color: Colors.white.withValues(alpha: 0.08), height: 8),
+          const SizedBox(height: 6),
+          _pricingRow(
+            label: 'استخدام البطل في كل قصة',
+            value: '-$usagePerStory',
+            isDeduction: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _pricingRow({
+    required String label,
+    required String value,
+    required bool isDeduction,
+  }) {
+    final color =
+        isDeduction ? const Color(0xFFFF5252) : const Color(0xFF4CAF50);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(label,
+              style: TextStyle(
+                  color: AppColors.glassWhite.withValues(alpha: 0.85),
+                  fontSize: 13)),
+        ),
+        const SizedBox(width: 8),
+        Text(value,
+            style: TextStyle(
+                color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(width: 3),
+        Icon(Icons.stars, color: color, size: 16),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('اصنع بطلك')),
+      appBar: AppBar(
+        title: const Text('اصنع بطلك'),
+        actions: const [CreditsBadge()],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            _buildPricingInfo(),
             if (_currentAvatar != null) ...[
               Icon(Icons.check_circle, color: AppColors.success, size: 60),
               const SizedBox(height: 10),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hikayati/application/use_cases/auth_use_cases.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/credits_badge.dart';
 import 'package:hikayati/features/library/services/library_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -35,17 +36,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final res = await Supabase.instance.client
           .from('profiles')
-          .select('credits, avatar_profile_summary')
+          .select('credits, avatar_profile_summary, voice_clone_enabled')
           .eq('user_id', user.id)
           .maybeSingle();
 
       if (res != null) {
         _credits = res['credits'] as int? ?? 0;
         _hasAvatar = res['avatar_profile_summary'] != null;
+        // مصدر الحقيقة: Supabase فقط — ليس SharedPreferences
+        _hasVoice = res['voice_clone_enabled'] == true;
       }
-
-      final prefs = await SharedPreferences.getInstance();
-      _hasVoice = prefs.getString('cloned_voice_id') != null;
 
       _storyCount = await LibraryService().getStoryCount();
     } catch (_) {}
@@ -54,7 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
-    await Supabase.instance.client.auth.signOut();
+    // AuthUseCases.signOut يمسح SharedPreferences (voice/avatar cache)
+    await AuthUseCases().signOut();
     if (mounted) context.go('/login');
   }
 
@@ -101,6 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.appBarBackground,
         foregroundColor: AppColors.glassWhite,
         centerTitle: true,
+        actions: const [CreditsBadge()],
       ),
       body: _loading
           ? const Center(

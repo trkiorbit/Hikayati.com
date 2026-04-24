@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hikayati/core/theme/app_colors.dart';
+import 'package:hikayati/core/widgets/credits_badge.dart';
 import '../services/hakeem_service.dart';
 
 class HakeemChatScreen extends StatefulWidget {
@@ -82,6 +83,7 @@ class _HakeemChatScreenState extends State<HakeemChatScreen> {
           foregroundColor: AppColors.secondary,
           centerTitle: true,
           elevation: 0,
+          actions: const [CreditsBadge()],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
             child: Container(color: AppColors.secondary.withOpacity(0.2), height: 1),

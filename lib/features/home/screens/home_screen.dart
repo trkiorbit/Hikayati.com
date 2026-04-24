@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hikayati/application/use_cases/auth_use_cases.dart';
 import 'package:hikayati/application/use_cases/get_private_stories_use_case.dart';
 import 'package:hikayati/application/use_cases/get_public_stories_use_case.dart';
 import 'dart:convert';
@@ -181,7 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _drawerItem(Icons.gavel, 'الشروط والأحكام', () => context.push('/terms')),
           Divider(color: Colors.white.withValues(alpha: 0.08), height: 16),
           _drawerItem(Icons.logout, 'تسجيل الخروج', () async {
-            await Supabase.instance.client.auth.signOut();
+            // AuthUseCases.signOut يمسح SharedPreferences (voice/avatar cache)
+            await AuthUseCases().signOut();
             if (context.mounted) context.go('/login');
           }, color: AppColors.error),
         ],

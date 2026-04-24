@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/network/supabase_service.dart';
+import 'package:hikayati/core/config/story_generation_mode.dart';
 import 'package:hikayati/features/story_engine/services/prompt_builder_service.dart';
 import 'package:hikayati/features/story_engine/services/content_monitor_service.dart';
 
@@ -39,19 +40,29 @@ class UnifiedEngine {
       final String imageStyle = requestData['imageStyle'] ?? 'كرتوني';
       final bool useAvatar = requestData['useAvatar'] == true;
 
+      // عدد المشاهد وجودة القصة تُقرأ من config (userDefault أو publicLibraryProduction)
+      final int sceneCount = StoryGenerationConfig.sceneCount;
+      final String linesPerScene = StoryGenerationConfig.linesPerScene;
+      final String qualityDirective = StoryGenerationConfig.qualityDirective;
+      debugPrint('[Engine] mode=${StoryGenerationConfig.currentMode.name} '
+          'scenes=$sceneCount narrativeStyle=${StoryGenerationConfig.narrativeStyle}');
+
       // بناء prompt دقيق وموجه لإرجاع JSON مع تعليمات قاسية للحفاظ على القصة
       final String systemPrompt =
           '''
       أنت مؤلف قصص أطفال محترف ومبدع.
       الهدف: كتابة قصة تناسب طفل اسمه "$heroName" وعمره $heroAge سنوات، بأسلوب "$storyStyle".
+
+      $qualityDirective
+
       مهمتك:
       قم بصياغة استجابة بصيغة JSON Object يحتوي على مفتاحين:
       1. "title": عنوان ابتكاري وجذاب للقصة (نص قصير).
-      2. "scenes": مصفوفة (Array) من 3 مشاهد فقط.
+      2. "scenes": مصفوفة (Array) من $sceneCount مشاهد بالضبط.
       كل مشهد يحتوي على:
-      1. "text_ar": نص المشهد بالعربية (سطرين كحد أقصى).
+      1. "text_ar": نص المشهد بالعربية ($linesPerScene).
       2. "scene_description_en": وصف بصري دقيق باللغة الإنجليزية للأفعال والمكان والبيئة في المشهد (مثلاً: A young child running in a magical glowing forest). لا تصف الملامح أو الملابس الثابتة للشخصية، فقط اذكر الحدث.
-      
+
       يجب أن يكون الرد JSON فقط، بدون أي نص إضافي.
       ''';
 
@@ -132,9 +143,17 @@ class UnifiedEngine {
           avatarData: useAvatar ? requestData['avatarData'] : null,
         );
 
+        // Public Library Production Mode: إضافة enhancer سينمائي عالي الجودة
+        String enhancedImagePrompt = finalImagePrompt;
+        final String imageEnhancer = StoryGenerationConfig.imagePromptEnhancer;
+        if (imageEnhancer.isNotEmpty) {
+          enhancedImagePrompt = '$finalImagePrompt$imageEnhancer';
+          debugPrint('[Engine] Public Library Mode → image enhancer applied');
+        }
+
         // مراقبة المحتوى (Content Monitor) - للصور والنصوص
-        String safePrompt = finalImagePrompt;
-        if (!ContentMonitorService.isContentSafe(finalImagePrompt)) {
+        String safePrompt = enhancedImagePrompt;
+        if (!ContentMonitorService.isContentSafe(enhancedImagePrompt)) {
            debugPrint('[Monitor] 🚫 تم اكتشاف محتوى غير آمن في وصف الصورة. سيتم استخدام بديل آمن.');
            safePrompt = 'A beautiful safe child-friendly scene in $imageStyle style.';
         }
