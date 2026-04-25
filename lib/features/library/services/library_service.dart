@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hikayati/core/network/supabase_service.dart';
 import 'package:flutter/foundation.dart';
 
 class LibraryService {
   final SupabaseClient _client = SupabaseService.client;
+
+  /// كاش داخلي لقصص المكتبة المحلية (catalog.json + story_pack.json) — يُحمّل مرة واحدة
+  static List<Map<String, dynamic>>? _cachedLocalStories;
 
   Future<List<dynamic>> getPrivateStories() async {
     final userId = _client.auth.currentUser?.id;
@@ -110,8 +115,50 @@ class LibraryService {
     ],
   };
 
+  /// تحميل قصص المكتبة العامة المحلية من catalog.json + story_pack.json
+  /// يُستخدم كمصدر أساسي للقصص العامة، مع fallback آمن للـ static في حال فشل القراءة
+  Future<List<Map<String, dynamic>>> _loadLocalCatalog() async {
+    if (_cachedLocalStories != null) return _cachedLocalStories!;
+
+    final stories = <Map<String, dynamic>>[];
+    try {
+      final catalogRaw =
+          await rootBundle.loadString('assets/public_library/catalog.json');
+      final catalog = jsonDecode(catalogRaw) as Map<String, dynamic>;
+      final entries = (catalog['stories'] as List?) ?? const [];
+
+      for (final entry in entries) {
+        try {
+          final packPath = entry['pack_path']?.toString();
+          if (packPath == null || packPath.isEmpty) continue;
+          final packRaw = await rootBundle.loadString(packPath);
+          final pack = jsonDecode(packRaw) as Map<String, dynamic>;
+          stories.add(pack);
+        } catch (e) {
+          debugPrint('[Library] ⚠️ تعذر تحميل pack ${entry['slug']}: $e');
+        }
+      }
+
+      if (stories.isEmpty) {
+        debugPrint('[Library] ⚠️ catalog فارغ — استخدام fallback static');
+        stories.add(Map<String, dynamic>.from(_laylaWolfStaticStory));
+      } else {
+        debugPrint('[Library] ✅ تحميل ${stories.length} قصة محلية من catalog');
+      }
+    } catch (e) {
+      debugPrint('[Library] ⚠️ تعذر قراءة catalog.json: $e — fallback static');
+      stories.add(Map<String, dynamic>.from(_laylaWolfStaticStory));
+    }
+
+    _cachedLocalStories = stories;
+    return stories;
+  }
+
   Future<List<dynamic>> getPublicStories() async {
-    // محاولة جلب القصص من Supabase أولاً
+    // 1) المصدر الأساسي: catalog محلي (assets/public_library/catalog.json)
+    final localStories = await _loadLocalCatalog();
+
+    // 2) المصدر الإضافي: Supabase (للقصص المرفوعة لاحقاً)
     List<dynamic> remoteStories = [];
     try {
       remoteStories = await _client
@@ -122,14 +169,12 @@ class LibraryService {
       debugPrint('[Library] ⚠️ تعذر جلب القصص العامة من Supabase: $e');
     }
 
-    // دمج قصة ليلى المحلية في المقدمة (إذا لم تكن موجودة في Supabase بنفس الـ ID)
-    final laylaId = _laylaWolfStaticStory['id'];
-    final hasLaylaInRemote = remoteStories.any((s) => s['id'] == laylaId);
-    if (!hasLaylaInRemote) {
-      return [_laylaWolfStaticStory, ...remoteStories];
-    }
+    // 3) دمج: المحلي أولاً، ثم Supabase باستثناء أي ID مكرر
+    final localIds = localStories.map((s) => s['id']?.toString()).toSet();
+    final remoteOnly =
+        remoteStories.where((s) => !localIds.contains(s['id']?.toString()));
 
-    return remoteStories;
+    return [...localStories, ...remoteOnly];
   }
 
   Future<List<String>> getUnlockedPublicStories() async {

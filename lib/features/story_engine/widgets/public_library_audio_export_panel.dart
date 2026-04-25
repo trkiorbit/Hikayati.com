@@ -44,9 +44,15 @@ class _PublicLibraryAudioExportPanelState
     }
   }
 
+  // Helper: يمنع crash (setState after dispose) لو أُغلقت اللوحة أثناء await
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+  }
+
   Future<void> _generateAll({bool overwrite = false}) async {
     if (_isRunning) return;
-    setState(() {
+    _safeSetState(() {
       _isRunning = true;
       _manifestPath = null;
       // reset all to pending if overwrite
@@ -61,8 +67,8 @@ class _PublicLibraryAudioExportPanelState
 
     int savedCount = 0;
     for (final result in _results) {
-      // تحديث UI قبل التوليد
-      setState(() => result.status = SceneAudioStatus.generating);
+      // تحديث UI قبل التوليد (آمن من dispose)
+      _safeSetState(() => result.status = SceneAudioStatus.generating);
 
       final ok = await PublicLibraryAudioExportService.generateScene(
         slug: widget.slug,
@@ -71,12 +77,12 @@ class _PublicLibraryAudioExportPanelState
       );
 
       // تحديث UI بعد التوليد (status أصبح saved/failed/skipped)
-      if (mounted) setState(() {});
+      _safeSetState(() {});
 
       if (ok) savedCount++;
     }
 
-    // كتابة manifest
+    // كتابة manifest (تستمر حتى لو أُغلقت اللوحة — لا تعتمد على mounted)
     final manifestPath = await PublicLibraryAudioExportService.writeManifest(
       slug: widget.slug,
       title: widget.title,
@@ -89,8 +95,10 @@ class _PublicLibraryAudioExportPanelState
       scenesGenerated: savedCount,
     );
 
+    // من هنا نحتاج context + setState — نتأكد من mounted
     if (!mounted) return;
-    setState(() {
+
+    _safeSetState(() {
       _isRunning = false;
       _manifestPath = manifestPath;
     });
@@ -103,6 +111,7 @@ class _PublicLibraryAudioExportPanelState
         _results.firstWhere((r) => r.status == SceneAudioStatus.failed,
             orElse: () => SceneAudioResult(sceneNumber: 0, text: ''));
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: allOk ? Colors.green[700] : Colors.red[700],
@@ -155,7 +164,10 @@ class _PublicLibraryAudioExportPanelState
             r.status == SceneAudioStatus.skipped)
         .length;
 
-    return Container(
+    // PopScope يمنع إغلاق الـ BottomSheet (system back / scrim tap) أثناء التوليد
+    return PopScope(
+      canPop: !_isRunning,
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         color: Color(0xFF15101F),
@@ -180,8 +192,13 @@ class _PublicLibraryAudioExportPanelState
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close, color: Colors.white54),
-                onPressed: () => Navigator.of(context).pop(),
+                tooltip: _isRunning
+                    ? 'معطّل أثناء التوليد'
+                    : 'إغلاق',
+                icon: Icon(Icons.close,
+                    color: _isRunning ? Colors.white24 : Colors.white54),
+                onPressed:
+                    _isRunning ? null : () => Navigator.of(context).pop(),
               ),
             ],
           ),
@@ -359,6 +376,7 @@ class _PublicLibraryAudioExportPanelState
             style: TextStyle(color: Colors.white38, fontSize: 10),
           ),
         ],
+      ),
       ),
     );
   }

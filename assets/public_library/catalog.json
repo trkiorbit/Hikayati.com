@@ -1,0 +1,11 @@
+{
+    "version":  1,
+    "updated_at":  "2026-04-25",
+    "stories":  [
+                    {
+                        "id":  "11111111-1111-1111-1111-111111111111",
+                        "slug":  "layla_wolf",
+                        "pack_path":  "assets/public_library/layla_wolf/story_pack.json"
+                    }
+                ]
+}

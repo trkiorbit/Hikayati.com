@@ -80,7 +80,10 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   assets:
+    - assets/public_library/catalog.json
+    - assets/public_library/layla_wolf/story_pack.json
     - assets/public_library/layla_wolf/images/
+    - assets/public_library/layla_wolf/audio/
     - .env
     - assets/images/
     - assets/videos/

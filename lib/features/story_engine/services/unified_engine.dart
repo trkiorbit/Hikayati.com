@@ -13,6 +13,7 @@ import 'package:hikayati/core/network/supabase_service.dart';
 import 'package:hikayati/core/config/story_generation_mode.dart';
 import 'package:hikayati/features/story_engine/services/prompt_builder_service.dart';
 import 'package:hikayati/features/story_engine/services/content_monitor_service.dart';
+import 'package:hikayati/core/prompts/hikayati_visual_style_guide.dart';
 
 class UnifiedEngine {
   /// دالة توليد القصة
@@ -170,6 +171,20 @@ class UnifiedEngine {
           cleanedPrompt = cleanedPrompt.substring(0, 900);
         }
         debugPrint('[PromptSafe] prompt trimmed');
+
+        // [Quality Pipeline 5.1] حقن Visual Style Guide الموحد
+        // الهدف: رفع الجودة + ثبات الشخصية + منع تشوّه الأيدي/الوجوه
+        // characterDescription يُترك فارغاً هنا (Character Bible يأتي في 5.2)
+        cleanedPrompt = HikayatiVisualStyleGuide.buildPrompt(
+          scenePrompt: cleanedPrompt,
+        );
+        cleanedPrompt = HikayatiVisualStyleGuide.trimToSafeLength(cleanedPrompt);
+
+        // log للمشهد الأول فقط (تدقيق الـ prompt النهائي بدون إغراق logs)
+        if (scenes.isEmpty) {
+          debugPrint('[StyleGuide v${HikayatiVisualStyleGuide.version}] '
+              'final prompt for scene_1: $cleanedPrompt');
+        }
 
         // بناء رابط الصورة باستخدام النطاق وتحديد موديل flux واستخدام نفس (storySeed) لجميع المشاهد
         // إصلاح 401: التأكد من صيغة المفتاح أو إزالته إذا كان فارغاً

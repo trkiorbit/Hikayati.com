@@ -161,20 +161,38 @@ class _CinemaScreenState extends State<CinemaScreen>
   }
 
   Future<void> _playSavedAudio(String url) async {
-    debugPrint('[Cinema] 🎵 تشغيل الصوت المحفوظ: $url');
+    final isAsset = url.startsWith('assets/');
+    final isNetwork = url.startsWith('http://') || url.startsWith('https://');
+
+    if (isAsset) {
+      debugPrint('[Cinema] 🎵 playing asset audio: $url');
+    } else if (isNetwork) {
+      debugPrint('[Cinema] 🎵 playing network audio: $url');
+    } else {
+      debugPrint('[Cinema] ⚠️ unsupported audio source: $url');
+      return;
+    }
+
     try {
       final completer = Completer<void>();
       final sub = _audioPlayer.onPlayerComplete.listen((_) {
         if (!completer.isCompleted) completer.complete();
       });
-      await _audioPlayer.play(UrlSource(url));
+
+      if (isAsset) {
+        // AssetSource expects path relative to assets/ root (without the prefix).
+        await _audioPlayer.play(AssetSource(url.substring('assets/'.length)));
+      } else {
+        await _audioPlayer.play(UrlSource(url));
+      }
+
       await completer.future.timeout(
         const Duration(seconds: 60),
         onTimeout: () {},
       );
       sub.cancel();
     } catch (e) {
-      debugPrint('[Cinema] ⚠️ فشل تشغيل الصوت المحفوظ: $e');
+      debugPrint('[Cinema] ⚠️ failed to play audio: $e');
     }
   }
 
@@ -250,9 +268,15 @@ class _CinemaScreenState extends State<CinemaScreen>
               const Text('لا توجد مشاهد', style: TextStyle(color: Colors.white70, fontSize: 16)),
               const SizedBox(height: 24),
               TextButton.icon(
-                onPressed: () => context.go('/'),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/');
+                  }
+                },
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                label: const Text('العودة للرئيسية', style: TextStyle(color: Colors.white)),
+                label: const Text('العودة', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -270,8 +294,10 @@ class _CinemaScreenState extends State<CinemaScreen>
           onPressed: () {
             _stopAudio();
             _bufferTimer?.cancel();
-            if (widget.fromLibrary) {
-              context.go('/private-library'); // ✅ المسار الصحيح
+            // الأولوية: ارجع لنفس الشاشة التي جئت منها (العامة/الخاصة)
+            // عبر pop من الـ navigation stack بدل go الذي يبدّل الـ stack.
+            if (context.canPop()) {
+              context.pop();
             } else {
               context.go('/');
             }

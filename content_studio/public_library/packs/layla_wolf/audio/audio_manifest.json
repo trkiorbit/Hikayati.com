@@ -1,0 +1,51 @@
+{
+  "slug": "layla_wolf",
+  "title": "ليلى والذئب الذكي",
+  "generated_at": "2026-04-25T03:16:25.433505",
+  "voice": "fable",
+  "tts_provider": "pollinations.elevenlabs",
+  "scenes": [
+    {
+      "scene": 1,
+      "text": "في صباح يوم هادئ، وقفت ليلى عند باب بيتها الصغير قرب الغابة. كانت تحمل سلةً صغيرة مليئةً بالخبز الدافئ والعسل لجدتها المحبوبة. نظرت إلى الطريق الطويل، وابتسمت في قلبها، ثم خطت خطوتها الأولى نحو المغامرة.",
+      "audio_file": "scene_01.mp3",
+      "local_path": "/data/user/0/com.example.hikayati.hikayati/app_flutter/public_library_exports/layla_wolf/audio/scene_01.mp3",
+      "status": "skipped"
+    },
+    {
+      "scene": 2,
+      "text": "دخلت ليلى الغابة الساحرة، والشمس تتسلل بلطف بين الأشجار العالية. لفت انتباهها آثار أقدام كبيرة في التراب، وسمعت صوتاً هادئاً خلف الأشجار. أمسكت سلتها بقوة، وتقدمت بحذر، فضولها أكبر من خوفها.",
+      "audio_file": "scene_02.mp3",
+      "local_path": "/data/user/0/com.example.hikayati.hikayati/app_flutter/public_library_exports/layla_wolf/audio/scene_02.mp3",
+      "status": "saved"
+    },
+    {
+      "scene": 3,
+      "text": "فجأةً، ظهر من بين الأشجار ذئبٌ رماديٌ هادئ. ارتجفت ليلى قليلاً، لكنها لاحظت أن عينيه لا تشبهان عيون الوحوش في الحكايات. نظر إليها الذئب بلطف وقال بصوت ناعم: «لا تخافي يا صغيرة، أنا بحاجة إلى مساعدتك».",
+      "audio_file": "scene_03.mp3",
+      "local_path": "/data/user/0/com.example.hikayati.hikayati/app_flutter/public_library_exports/layla_wolf/audio/scene_03.mp3",
+      "status": "saved"
+    },
+    {
+      "scene": 4,
+      "text": "أشار الذئب بأنفه نحو الأمام، حيث بدا الجسر الخشبي القديم متكسراً فوق النهر. قال بصوت حزين: «كنت أحرس هذا الطريق كل يوم، لكي لا يمر أحد من هنا فيقع». أدركت ليلى أن الذئب لم يكن عدواً، بل كان حارساً صامتاً يخاف على الناس.",
+      "audio_file": "scene_04.mp3",
+      "local_path": "/data/user/0/com.example.hikayati.hikayati/app_flutter/public_library_exports/layla_wolf/audio/scene_04.mp3",
+      "status": "saved"
+    },
+    {
+      "scene": 5,
+      "text": "عملت ليلى والذئب معاً. جمعت الأغصان المتينة، وساعدها الذئب في جرّها بفمه. معاً صنعا طريقاً آمناً صغيراً حول الجسر المكسور. ضحكت ليلى، وربّتت على رأس الذئب بلطف، وقالت: «أنت أذكى صديق قابلته اليوم».",
+      "audio_file": "scene_05.mp3",
+      "local_path": "/data/user/0/com.example.hikayati.hikayati/app_flutter/public_library_exports/layla_wolf/audio/scene_05.mp3",
+      "status": "saved"
+    },
+    {
+      "scene": 6,
+      "text": "وصلت ليلى إلى بيت جدتها، ففتحت لها الجدة ذراعيها بابتسامة دافئة. روت ليلى قصة الذئب الذي لم يكن كما تخيلته في البداية. همست الجدة وهي تمسح شعرها: «أجمل الأشياء يا حبيبتي يراها القلبُ الذكي، لا العينُ المتسرعة».",
+      "audio_file": "scene_06.mp3",
+      "local_path": "/data/user/0/com.example.hikayati.hikayati/app_flutter/public_library_exports/layla_wolf/audio/scene_06.mp3",
+      "status": "saved"
+    }
+  ]
+}
