@@ -3,6 +3,10 @@
 *.log
 *.pyc
 *.swp
+
+# Hikayati session/local artifacts (keep out of git)
+.claude/
+archive/_zip_safety/
 .DS_Store
 .atom/
 .build/
@@ -46,3 +50,4 @@ app.*.map.json
 
 # Secrets
 .env
+.claude/worktrees/
