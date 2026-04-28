@@ -32,13 +32,13 @@
 - ✅ ~~اختبار end-to-end~~ ناجح — الـ logs أكدت تشغيل الستة من assets/.
 - 🆕 **المرحلة 5: Quality Pipeline لقصص العميل** — انتظار موافقة تروك على البدء.
 
-### المرحلة 5 — Quality Pipeline (مقترحة، تنتظر موافقة)
-بناء طبقات جودة بين التوليد والحفظ:
-1. Visual Style Guide موحد (Pixar 3D + negative prompts).
-2. Character Bible من مدخلات المستخدم.
-3. Scene Bible (هدف + مكان + شعور + prompt).
-4. شاشة مراجعة الصور (قبول/إعادة توليد).
-5. الحفظ + الصوت + الخصم بعد القبول فقط.
+### Phase 5 — حالة الإقفال (2026-04-25)
+- ✅ **5.1** Visual Style Guide — مفعّل، logs مؤكدة.
+- ✅ **5.1.1** First Scene Audio Timeout Fix — preflight + retry.
+- ✅ **5.2** Character Bible — `buildCharacterBible()` + حقن في كل prompt.
+- ✅ **5.3** Story Reopen Integrity — تحقق نجح، لا تعديل لازم.
+- ✅ **5.4** Cinema Audio Stability — overlap protection + mounted guards.
+- ⏳ **5.5** Smoke Test — انتظار تروك (A: ليلى | B: قصة بدون أفاتار | C: قصة بأفاتار | D: cloned voice إن جاهز).
 
 النسبية: الصور 60% / النص 25% / خط الإنتاج 15%.
 

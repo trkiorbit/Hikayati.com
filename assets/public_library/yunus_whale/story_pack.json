@@ -1,0 +1,85 @@
+{
+    "id":  "55555555-5555-5555-5555-555555555555",
+    "slug":  "yunus_whale",
+    "title":  "سيدنا يونس في بطن الحوت",
+    "summary":  "قصة من القرآن الكريم عن نبيّ الله يونس عليه السلام الذي ابتلعه حوتٌ عظيم في عمق البحر، فدعا ربّه في الظلمات الثلاث، فاستجاب له ربّه ونجّاه. تعلّم القصة الأطفال أن مع كلّ ضيق فرجاً، وأن الدعاء الصادق يفتح أبواب السماء.",
+    "cover":  "assets/public_library/yunus_whale/images/scene_07.jpeg",
+    "price_credits":  15,
+    "category":  "قصص الأنبياء",
+    "voice_type":  "fable",
+    "is_static_local":  true,
+    "scenes_json":  [
+                        {
+                            "scene":  1,
+                            "text":  "أرسل الله سيدنا يونس عليه السلام إلى قومه. كانوا قوماً غافلين، يعبدون الأصنام ويتركون عبادة الله. وقف فيهم زماناً طويلاً يدعوهم إلى الحقّ، يقول لهم اعبدوا الله وحده، فهو خالقكم ورازقكم. لكنّهم أعرضوا عنه ولم يؤمنوا.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_01.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_01.mp3"
+                        },
+                        {
+                            "scene":  2,
+                            "text":  "ضاق صدر سيدنا يونس عليه السلام من إعراض قومه. غضب عليهم، وخرج من القرية وحده، قبل أن يأذن له الله بالخروج. مشى في الطريق، والشمس تميل، وقلبه ثقيل. لم يعلم أنّ هذا القرار سيغيّر كلّ شيء.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_02.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_02.mp3"
+                        },
+                        {
+                            "scene":  3,
+                            "text":  "وصل إلى مرفأ بعيد على البحر. كانت سفينة قديمة تستعدّ للإبحار. صعد عليها مع الركّاب. أبحرت السفينة في بحر هادئ في البداية، والشمس تغرب وراء الموج.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_03.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_03.mp3"
+                        },
+                        {
+                            "scene":  4,
+                            "text":  "فجأة، تغيّر كلّ شيء. هاجت السماء، وتلبّدت الغيوم، وارتفعت الأمواج عالياً. مالت السفينة يميناً وشمالاً. صرخ البحارة السفينة ستغرق! يجب أن نخفّف من حملها! اقترعوا فيمن يُلقى في البحر فخرجت قرعة سيدنا يونس عليه السلام.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_04.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_04.mp3"
+                        },
+                        {
+                            "scene":  5,
+                            "text":  "وقف سيدنا يونس عليه السلام عند طرف السفينة. نظر إلى البحر الهائج. ثمّ أَلْقَى نفسه في الماء، تسليماً لأمر الله. ابتلعته الموجة العالية، وأخفته في عمق البحر.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_05.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_05.mp3"
+                        },
+                        {
+                            "scene":  6,
+                            "text":  "أمر الله حوتاً كبيراً أن يأتي إليه. جاء الحوت من الأعماق، وفتح فمه الواسع، وابتلع سيدنا يونس عليه السلام ابتلاعاً رفيقاً، دون أن يؤذيه. كانت تلك معجزة من الله ليُنقذه ويبتليه في آنٍ واحد.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_06.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_06.mp3"
+                        },
+                        {
+                            "scene":  7,
+                            "text":  "وجد سيدنا يونس عليه السلام نفسه في ظلام شديد. ظلمة الليل فوق البحر، وظلمة عمق البحر، وظلمة بطن الحوت. لا يرى شيئاً، ولا يسمع شيئاً سوى دقّات قلبه. شعر بضعفه أمام عظمة الله.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_07.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_07.mp3"
+                        },
+                        {
+                            "scene":  8,
+                            "text":  "رفع سيدنا يونس عليه السلام يديه في الظلام، ودعا ربّه بكلماتٍ خالدة لا إلهَ إلا أنتَ سُبحانَكَ إنّي كنتُ مِنَ الظّالمين. رددّها ثمّ ردّدها ثمّ ردّدها. سمعت السماء دعاءه. تحرّك الفرج.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_08.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_08.mp3"
+                        },
+                        {
+                            "scene":  9,
+                            "text":  "أمر الله الحوت أن يُلقي سيدنا يونس عليه السلام على شاطئ بعيد. فعل الحوت ذلك بلطف، ثمّ غاص في البحر. كان النبيّ ضعيفاً جداً، جسده هزيل، لا يقوى على الحركة. مدّ يديه على الرمال. رأى السماء الزرقاء فوقه، فعرف أنّ الله سمعه.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_09.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_09.mp3"
+                        },
+                        {
+                            "scene":  10,
+                            "text":  "أنبت الله بجواره شجرةً عجيبة من اليقطين، أوراقها عريضة، وثمارها كبيرة. ظلّلتْه من شمس الظهيرة، وأطعمتْه من ثمارها. كان كلّ ورقة منها رسالةً من ربّه أنا معك.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_10.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_10.mp3"
+                        },
+                        {
+                            "scene":  11,
+                            "text":  "بقي سيدنا يونس عليه السلام تحت الشجرة أياماً، يستعيد قوّته، ويذكر الله ويستغفره. كلّ يوم، كان ظلّ الشجرة الواسع يحتضنه، وثمارها تشفيه. تعلّم درساً عظيماً الصبر على البلاء أعظم من الفرار منه.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_11.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_11.mp3"
+                        },
+                        {
+                            "scene":  12,
+                            "text":  "وعندما عاد سيدنا يونس عليه السلام إلى قومه، وجد عجباً! كانوا قد رأوا علامات العذاب تقترب، فآمنوا جميعاً، ودَعوا ربّهم بصدق، فرفع الله عنهم العذاب. تذكَّرْ يا صغيري، مهما اشتدّت الظلمة، فإنّ كلمةً صادقة من قلبك تصل إلى السماء.",
+                            "imageUrl":  "assets/public_library/yunus_whale/images/scene_12.jpeg",
+                            "audio_url":  "assets/public_library/yunus_whale/audio/scene_12.mp3"
+                        }
+                    ]
+}
